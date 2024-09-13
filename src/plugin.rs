@@ -58,7 +58,7 @@ impl Plugin for PersistentLoadoutPlugin {
         let acf_livery_path = acf_livery_path.get_as_string().unwrap_or_default();
 
         if !acf_livery_path.is_empty() {
-            self.acf_livery_path = Some(PathBuf::from(acf_livery_path));
+            self.acf_livery_path = Some(PathBuf::from(&acf_livery_path));
             debugln!("acf_livery_path {}", acf_livery_path);
         } else {
             return Err(PluginError::UnknownAcfLiveryPath);
