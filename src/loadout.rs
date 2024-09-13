@@ -87,7 +87,8 @@ impl Data {
     }
 
     fn livery_name(&self) -> String {
-        let livery_os_str = self.path.file_name().unwrap_or_default();
+        let livery_folder = self.path.parent().unwrap();
+        let livery_os_str = livery_folder.file_name().unwrap_or_default();
         let livery = livery_os_str.to_string_lossy().to_string();
 
         livery
