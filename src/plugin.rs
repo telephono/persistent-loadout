@@ -7,7 +7,7 @@ use xplm::plugin::{Plugin, PluginInfo};
 
 use crate::debugln;
 use crate::flight_loop::FlightLoopHandler;
-use crate::loadout::Data;
+use crate::loadout::LoadoutData;
 
 pub static NAME: &str = concat!("Persistent Loadout", " ", "v", env!("CARGO_PKG_VERSION"));
 static SIGNATURE: &str = concat!("com.x-plane.xplm.", env!("CARGO_PKG_NAME"));
@@ -68,7 +68,7 @@ impl Plugin for PersistentLoadoutPlugin {
         }
 
         if let Some(acf_livery_path) = &self.acf_livery_path {
-            if let Err(e) = Data::save_loadout(acf_livery_path) {
+            if let Err(e) = LoadoutData::save_loadout(acf_livery_path) {
                 debugln!("{e}");
             }
         }

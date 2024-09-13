@@ -3,7 +3,7 @@ use xplm::data::{ReadOnly, StringRead};
 use xplm::flight_loop::FlightLoopCallback;
 
 use crate::debugln;
-use crate::loadout::Data;
+use crate::loadout::LoadoutData;
 
 pub struct FlightLoopHandler {
     pub acf_livery_path: Option<String>,
@@ -19,7 +19,7 @@ impl FlightLoopCallback for FlightLoopHandler {
         }
 
         if let Some(acf_livery_path) = &self.acf_livery_path {
-            if let Err(e) = Data::restore_loadout(acf_livery_path) {
+            if let Err(e) = LoadoutData::restore_loadout(acf_livery_path) {
                 debugln!("{e}");
             }
         }

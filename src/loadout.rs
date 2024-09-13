@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io::{BufReader, Write};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
@@ -11,8 +11,8 @@ use crate::debugln;
 use crate::plugin::{PluginError, DATA_FILE_NAME};
 
 #[derive(Default, Serialize, Deserialize)]
-pub struct Loadout {
-    pub m_fuel: Vec<f32>,
+struct Loadout {
+    m_fuel: Vec<f32>,
 }
 
 impl std::fmt::Display for Loadout {
@@ -21,60 +21,50 @@ impl std::fmt::Display for Loadout {
     }
 }
 
-pub struct Data {
-    path: PathBuf,
+pub struct LoadoutData {
+    data_file: PathBuf,
     loadout: Option<Loadout>,
 }
 
-impl std::fmt::Display for Data {
+impl std::fmt::Display for LoadoutData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let data = serde_json::to_string_pretty(&self.loadout).unwrap_or_default();
         f.write_str(&data)
     }
 }
 
-impl Data {
+impl LoadoutData {
     pub fn save_loadout(livery_path: &str) -> Result<(), PluginError> {
-        let mut data_file = PathBuf::from(livery_path);
-        data_file.push(DATA_FILE_NAME);
-
-        let data_file = data_file.to_string_lossy().to_string();
-
-        Self::from_file(&data_file)?
+        Self::from_file(livery_path)?
             .update_from_sim()?
             .write_into_file()?;
-
         Ok(())
     }
 
     pub fn restore_loadout(livery_path: &str) -> Result<(), PluginError> {
-        let mut data_file = PathBuf::from(livery_path);
-        data_file.push(DATA_FILE_NAME);
-
-        let data_file = data_file.to_string_lossy().to_string();
-        Self::from_file(&data_file)?.write_into_sim()?;
-
+        Self::from_file(livery_path)?.write_into_sim()?;
         Ok(())
     }
 
-    fn from_file(path: &str) -> std::io::Result<Self> {
-        let path = Path::new(path).to_path_buf();
+    fn from_file(livery_path: &str) -> std::io::Result<Self> {
+        let mut data_file = PathBuf::from(livery_path);
+        data_file.push(DATA_FILE_NAME);
 
-        let loadout: Option<Loadout> = match path.try_exists() {
+        let loadout: Option<Loadout> = match data_file.try_exists() {
             Err(e) => return Err(e),
             Ok(false) => {
-                debugln!("loadout file {} not found", path.to_string_lossy());
+                debugln!("loadout file {} not found", data_file.to_string_lossy());
                 None
             }
             Ok(true) => {
-                debugln!("found loadout file {}", path.to_string_lossy());
-                let file = File::open(Path::new(&path))?;
+                debugln!("found loadout file {}", data_file.to_string_lossy());
+                let file = File::open(&data_file)?;
                 let reader = BufReader::new(&file);
                 Some(serde_json::from_reader(reader)?)
             }
         };
 
-        Ok(Self { path, loadout })
+        Ok(Self { data_file, loadout })
     }
 
     fn update_from_sim(mut self) -> Result<Self, PluginError> {
@@ -98,9 +88,9 @@ impl Data {
 
     fn write_into_file(self) -> std::io::Result<Self> {
         if let Some(loadout) = &self.loadout {
-            debugln!("writing loadout to file {}", self.path.to_string_lossy());
+            debugln!("writing loadout to file {}", self.data_file.to_string_lossy());
             let json_data = serde_json::to_string_pretty(loadout)?;
-            let mut file = File::create(&self.path)?;
+            let mut file = File::create(&self.data_file)?;
             file.write_all(json_data.as_bytes())?;
         }
 
