@@ -1,4 +1,6 @@
 use std::path::PathBuf;
+use xplm::data::borrowed::DataRef;
+use xplm::data::{ReadOnly, StringRead};
 use xplm::flight_loop::FlightLoopCallback;
 
 use crate::debugln;
@@ -10,6 +12,13 @@ pub struct FlightLoopHandler {
 
 impl FlightLoopCallback for FlightLoopHandler {
     fn flight_loop(&mut self, state: &mut xplm::flight_loop::LoopState) {
+        let acf_livery_path: DataRef<[u8], ReadOnly> = DataRef::find("sim/aircraft/view/acf_livery_path").unwrap();
+        let acf_livery_path = acf_livery_path.get_as_string().unwrap_or_default();
+
+        if !acf_livery_path.is_empty() {
+            self.acf_livery_path = Some(PathBuf::from(acf_livery_path));
+        }
+
         if let Some(acf_livery_path) = &self.acf_livery_path {
             if let Err(e) = Data::restore_loadout_for_livery(acf_livery_path) {
                 debugln!("{e}");

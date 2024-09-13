@@ -24,8 +24,6 @@ pub enum PluginError {
     FindDataRef(#[from] FindError),
     #[error("no cold and dark startup")]
     NoColdAndDarkStartup,
-    #[error("could not get livery from acf_livery_path")]
-    UnknownAcfLiveryPath,
 }
 
 pub struct PersistentLoadoutPlugin {
@@ -39,22 +37,13 @@ impl Plugin for PersistentLoadoutPlugin {
     fn start() -> Result<Self, Self::Error> {
         debugln!("starting up...");
 
-        let acf_livery_path: DataRef<[u8], ReadOnly> = DataRef::find("sim/aircraft/view/acf_livery_path")?;
-        let acf_livery_path = acf_livery_path.get_as_string().unwrap_or_default();
-
-        if acf_livery_path.is_empty() {
-            return Err(PluginError::UnknownAcfLiveryPath);
-        }
-
-        debugln!("acf_livery_path {}", acf_livery_path);
-
         let flight_loop_handler = FlightLoopHandler {
-            acf_livery_path: Some(PathBuf::from(&acf_livery_path)),
+            acf_livery_path: None,
         };
 
         let plugin = Self {
             handler: FlightLoop::new(flight_loop_handler),
-            acf_livery_path: Some(PathBuf::from(&acf_livery_path)),
+            acf_livery_path: None,
         };
 
         Ok(plugin)
@@ -73,6 +62,13 @@ impl Plugin for PersistentLoadoutPlugin {
     }
 
     fn disable(&mut self) {
+        let acf_livery_path: DataRef<[u8], ReadOnly> = DataRef::find("sim/aircraft/view/acf_livery_path").unwrap();
+        let acf_livery_path = acf_livery_path.get_as_string().unwrap_or_default();
+
+        if !acf_livery_path.is_empty() {
+            self.acf_livery_path = Some(PathBuf::from(acf_livery_path));
+        }
+
         if let Some(acf_livery_path) = &self.acf_livery_path {
             if let Err(e) = Data::save_loadout_for_livery(acf_livery_path) {
                 debugln!("{e}");
