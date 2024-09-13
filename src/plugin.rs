@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use thiserror::Error;
 
 use xplm::data::borrowed::{DataRef, FindError};
@@ -28,7 +26,7 @@ pub enum PluginError {
 
 pub struct PersistentLoadoutPlugin {
     handler: FlightLoop,
-    acf_livery_path: Option<PathBuf>,
+    acf_livery_path: Option<String>,
 }
 
 impl Plugin for PersistentLoadoutPlugin {
@@ -66,11 +64,11 @@ impl Plugin for PersistentLoadoutPlugin {
         let acf_livery_path = acf_livery_path.get_as_string().unwrap_or_default();
 
         if !acf_livery_path.is_empty() {
-            self.acf_livery_path = Some(PathBuf::from(acf_livery_path));
+            self.acf_livery_path = Some(acf_livery_path);
         }
 
         if let Some(acf_livery_path) = &self.acf_livery_path {
-            if let Err(e) = Data::save_loadout_for_livery(acf_livery_path) {
+            if let Err(e) = Data::save_loadout(acf_livery_path) {
                 debugln!("{e}");
             }
         }
