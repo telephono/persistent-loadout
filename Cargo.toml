@@ -1,0 +1,15 @@
+[package]
+name = "persistent-loadout"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+bench = false
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+xplm = "0.4.1"
+xplm-sys = "0.5.0"
