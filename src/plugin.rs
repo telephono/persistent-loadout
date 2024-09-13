@@ -14,8 +14,7 @@ use crate::loadout::Data;
 pub static NAME: &str = concat!("Persistent Loadout", " ", "v", env!("CARGO_PKG_VERSION"));
 static SIGNATURE: &str = concat!("com.x-plane.xplm.", env!("CARGO_PKG_NAME"));
 static DESCRIPTION: &str = "Persistent loadout for X-Plane";
-
-pub static DATA_FILE_PATH: &str = "Output/persistent-loadout.json";
+pub static DATA_FILE_NAME: &str = "persistent-loadout.json";
 
 #[derive(Error, Debug)]
 pub enum PluginError {
@@ -40,9 +39,22 @@ impl Plugin for PersistentLoadoutPlugin {
     fn start() -> Result<Self, Self::Error> {
         debugln!("starting up...");
 
+        let acf_livery_path: DataRef<[u8], ReadOnly> = DataRef::find("sim/aircraft/view/acf_livery_path")?;
+        let acf_livery_path = acf_livery_path.get_as_string().unwrap_or_default();
+
+        if acf_livery_path.is_empty() {
+            return Err(PluginError::UnknownAcfLiveryPath);
+        }
+
+        debugln!("acf_livery_path {}", acf_livery_path);
+
+        let flight_loop_handler = FlightLoopHandler {
+            acf_livery_path: Some(PathBuf::from(&acf_livery_path)),
+        };
+
         let plugin = Self {
-            handler: FlightLoop::new(FlightLoopHandler),
-            acf_livery_path: None,
+            handler: FlightLoop::new(flight_loop_handler),
+            acf_livery_path: Some(PathBuf::from(&acf_livery_path)),
         };
 
         Ok(plugin)
@@ -54,16 +66,6 @@ impl Plugin for PersistentLoadoutPlugin {
             return Err(PluginError::NoColdAndDarkStartup);
         }
 
-        let acf_livery_path: DataRef<[u8], ReadOnly> = DataRef::find("sim/aircraft/view/acf_livery_path")?;
-        let acf_livery_path = acf_livery_path.get_as_string().unwrap_or_default();
-
-        if !acf_livery_path.is_empty() {
-            self.acf_livery_path = Some(PathBuf::from(&acf_livery_path));
-            debugln!("acf_livery_path {}", acf_livery_path);
-        } else {
-            return Err(PluginError::UnknownAcfLiveryPath);
-        }
-
         debugln!("enabled...");
         self.handler.schedule_after_loops(60);
 
@@ -71,8 +73,8 @@ impl Plugin for PersistentLoadoutPlugin {
     }
 
     fn disable(&mut self) {
-        if self.acf_livery_path.is_some() {
-            if let Err(e) = Data::save_aircraft_loadout() {
+        if let Some(acf_livery_path) = &self.acf_livery_path {
+            if let Err(e) = Data::save_loadout_for_livery(acf_livery_path) {
                 debugln!("{e}");
             }
         }

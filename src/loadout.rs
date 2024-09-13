@@ -9,8 +9,7 @@ use xplm::data::{ArrayRead, ArrayReadWrite};
 
 use crate::datarefs::BorrowedDataRefs;
 use crate::debugln;
-use crate::plugin::PluginError;
-use crate::plugin::DATA_FILE_PATH;
+use crate::plugin::{PluginError, DATA_FILE_NAME};
 
 #[derive(Default, Serialize, Deserialize)]
 pub struct Loadout {
@@ -36,16 +35,26 @@ impl std::fmt::Display for Data {
 }
 
 impl Data {
-    pub fn save_aircraft_loadout() -> Result<(), PluginError> {
-        Self::from_file(DATA_FILE_PATH)?
+    pub fn save_loadout_for_livery(livery: &Path) -> Result<(), PluginError> {
+        let mut data_file = PathBuf::from(livery);
+        data_file.push(DATA_FILE_NAME);
+
+        let data_file = data_file.to_string_lossy().to_string();
+
+        Self::from_file(&data_file)?
             .update_from_sim()?
             .write_to_file()?;
 
         Ok(())
     }
 
-    pub fn restore_aircraft_loadout() -> Result<(), PluginError> {
-        Self::from_file(DATA_FILE_PATH)?.write_into_sim()?;
+    pub fn restore_loadout_for_livery(livery: &Path) -> Result<(), PluginError> {
+        let mut data_file = PathBuf::from(livery);
+        data_file.push(DATA_FILE_NAME);
+
+        let data_file = data_file.to_string_lossy().to_string();
+
+        Self::from_file(&data_file)?.write_into_sim()?;
         Ok(())
     }
 
@@ -77,10 +86,17 @@ impl Data {
         Ok(Self { path, map })
     }
 
+    fn livery_name(&self) -> String {
+        let livery_os_str = self.path.file_name().unwrap_or_default();
+        let livery = livery_os_str.to_string_lossy().to_string();
+
+        livery
+    }
+
     fn write_into_sim(self) -> Result<Self, PluginError> {
         let mut datarefs = BorrowedDataRefs::initialize()?;
 
-        let livery = datarefs.livery_name();
+        let livery = self.livery_name();
 
         if let Some(loadout) = self.map.get(&livery.to_ascii_lowercase()) {
             debugln!("found loadout for {livery}: {loadout}");
@@ -93,7 +109,7 @@ impl Data {
     fn update_from_sim(mut self) -> Result<Self, PluginError> {
         let datarefs = BorrowedDataRefs::initialize()?;
 
-        let livery = datarefs.livery_name();
+        let livery = self.livery_name();
         let m_fuel = datarefs.m_fuel.as_vec();
 
         let loadout = Loadout { m_fuel };
