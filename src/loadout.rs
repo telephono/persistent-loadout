@@ -89,9 +89,9 @@ impl LoadoutData {
     }
 
     fn write_into_sim(self) -> Result<Self, PluginError> {
-        debugln!("setting loadout in X-Plane");
-
         if let Some(loadout) = self.loadout.as_ref() {
+            debugln!("setting loadout in X-Plane");
+            
             let mut m_fuel: DataRef<[f32], ReadWrite> = DataRef::find("sim/flightmodel/weight/m_fuel")?
                 .writeable()?;
 
