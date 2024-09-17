@@ -1,4 +1,3 @@
-mod datarefs;
 mod flight_loop;
 mod loadout;
 mod log;

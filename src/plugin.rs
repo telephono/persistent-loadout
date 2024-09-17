@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 use xplm::data::borrowed::{DataRef, FindError};
-use xplm::data::{DataRead, ReadOnly, StringRead};
+use xplm::data::DataRead;
 use xplm::flight_loop::FlightLoop;
 use xplm::plugin::{Plugin, PluginInfo};
 
@@ -26,7 +26,6 @@ pub enum PluginError {
 
 pub struct PersistentLoadoutPlugin {
     handler: FlightLoop,
-    acf_livery_path: Option<String>,
 }
 
 impl Plugin for PersistentLoadoutPlugin {
@@ -35,13 +34,8 @@ impl Plugin for PersistentLoadoutPlugin {
     fn start() -> Result<Self, Self::Error> {
         debugln!("starting up...");
 
-        let flight_loop_handler = FlightLoopHandler {
-            acf_livery_path: None,
-        };
-
         let plugin = Self {
-            handler: FlightLoop::new(flight_loop_handler),
-            acf_livery_path: None,
+            handler: FlightLoop::new(FlightLoopHandler),
         };
 
         Ok(plugin)
@@ -60,19 +54,10 @@ impl Plugin for PersistentLoadoutPlugin {
     }
 
     fn disable(&mut self) {
-        let acf_livery_path: DataRef<[u8], ReadOnly> = DataRef::find("sim/aircraft/view/acf_livery_path").unwrap();
-        let acf_livery_path = acf_livery_path.get_as_string().unwrap_or_default();
-
-        if !acf_livery_path.is_empty() {
-            self.acf_livery_path = Some(acf_livery_path);
+        if let Err(e) = LoadoutData::save_loadout() {
+            debugln!("{e}");
         }
-
-        if let Some(acf_livery_path) = &self.acf_livery_path {
-            if let Err(e) = LoadoutData::save_loadout(acf_livery_path) {
-                debugln!("{e}");
-            }
-        }
-
+        
         self.handler.deactivate();
         debugln!("{NAME} disabled...");
     }

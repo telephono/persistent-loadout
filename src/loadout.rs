@@ -4,9 +4,9 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-use xplm::data::{ArrayRead, ArrayReadWrite};
+use xplm::data::borrowed::DataRef;
+use xplm::data::{ArrayRead, ArrayReadWrite, ReadOnly, ReadWrite, StringRead};
 
-use crate::datarefs::BorrowedDataRefs;
 use crate::debugln;
 use crate::plugin::{PluginError, DATA_FILE_NAME};
 
@@ -17,7 +17,7 @@ struct Loadout {
 
 impl std::fmt::Display for Loadout {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&format!("fuel tanks: {:?}", self.m_fuel))
+        f.write_str(format!("fuel tanks: {:?}", self.m_fuel).as_str())
     }
 }
 
@@ -29,25 +29,34 @@ pub struct LoadoutData {
 impl std::fmt::Display for LoadoutData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let data = serde_json::to_string_pretty(&self.loadout).unwrap_or_default();
-        f.write_str(&data)
+        f.write_str(data.as_str())
     }
 }
 
 impl LoadoutData {
-    pub fn save_loadout(livery_path: &str) -> Result<(), PluginError> {
-        Self::from_file(livery_path)?
+    pub fn save_loadout() -> Result<(), PluginError> {
+        let acf_livery_path: DataRef<[u8], ReadOnly> = DataRef::find("sim/aircraft/view/acf_livery_path")?;
+        let acf_livery_path = acf_livery_path.get_as_string().unwrap_or_default();
+
+        Self::from_file(acf_livery_path.as_str())?
             .update_from_sim()?
             .write_into_file()?;
+
         Ok(())
     }
 
-    pub fn restore_loadout(livery_path: &str) -> Result<(), PluginError> {
-        Self::from_file(livery_path)?.write_into_sim()?;
+    pub fn restore_loadout() -> Result<(), PluginError> {
+        let acf_livery_path: DataRef<[u8], ReadOnly> = DataRef::find("sim/aircraft/view/acf_livery_path")?;
+        let acf_livery_path = acf_livery_path.get_as_string().unwrap_or_default();
+
+        Self::from_file(acf_livery_path.as_str())?
+            .write_into_sim()?;
+
         Ok(())
     }
 
-    fn from_file(livery_path: &str) -> std::io::Result<Self> {
-        let mut data_file = PathBuf::from(livery_path);
+    fn from_file(acf_livery_path: &str) -> std::io::Result<Self> {
+        let mut data_file = PathBuf::from(acf_livery_path);
         data_file.push(DATA_FILE_NAME);
 
         let loadout: Option<Loadout> = match data_file.try_exists() {
@@ -60,7 +69,8 @@ impl LoadoutData {
                 debugln!("found loadout file {}", data_file.to_string_lossy());
                 let file = File::open(&data_file)?;
                 let reader = BufReader::new(&file);
-                Some(serde_json::from_reader(reader)?)
+                let loadout = serde_json::from_reader(reader)?;
+                Some(loadout)
             }
         };
 
@@ -68,29 +78,35 @@ impl LoadoutData {
     }
 
     fn update_from_sim(mut self) -> Result<Self, PluginError> {
-        let datarefs = BorrowedDataRefs::initialize()?;
-        let m_fuel = datarefs.m_fuel.as_vec();
+        debugln!("getting loadout from X-Plane");
 
-        let loadout = Loadout { m_fuel };
+        let m_fuel: DataRef<[f32], ReadOnly> = DataRef::find("sim/flightmodel/weight/m_fuel")?;
+        let loadout = Loadout { m_fuel: m_fuel.as_vec() };
+
         self.loadout = Some(loadout);
 
         Ok(self)
     }
 
     fn write_into_sim(self) -> Result<Self, PluginError> {
-        if let Some(loadout) = &self.loadout {
-            let mut datarefs = BorrowedDataRefs::initialize()?;
-            datarefs.m_fuel.set(loadout.m_fuel.as_slice());
+        debugln!("setting loadout in X-Plane");
+
+        if let Some(loadout) = self.loadout.as_ref() {
+            let mut m_fuel: DataRef<[f32], ReadWrite> = DataRef::find("sim/flightmodel/weight/m_fuel")?
+                .writeable()?;
+
+            m_fuel.set(loadout.m_fuel.as_slice());
         }
 
         Ok(self)
     }
 
     fn write_into_file(self) -> std::io::Result<Self> {
-        if let Some(loadout) = &self.loadout {
+        if let Some(loadout) = self.loadout.as_ref() {
             debugln!("writing loadout to file {}", self.data_file.to_string_lossy());
+
             let json_data = serde_json::to_string_pretty(loadout)?;
-            let mut file = File::create(&self.data_file)?;
+            let mut file = File::create(self.data_file.as_os_str())?;
             file.write_all(json_data.as_bytes())?;
         }
 
