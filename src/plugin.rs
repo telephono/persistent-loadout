@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use xplm::data::borrowed::{DataRef, FindError};
+use xplm::data::borrowed::DataRef;
 use xplm::data::DataRead;
 use xplm::flight_loop::FlightLoop;
 use xplm::plugin::{Plugin, PluginInfo};
@@ -12,16 +12,20 @@ use crate::loadout::LoadoutData;
 pub static NAME: &str = concat!("Persistent Loadout", " ", "v", env!("CARGO_PKG_VERSION"));
 static SIGNATURE: &str = concat!("com.x-plane.xplm.", env!("CARGO_PKG_NAME"));
 static DESCRIPTION: &str = "Persistent loadout for X-Plane";
-pub static DATA_FILE_NAME: &str = "persistent-loadout.json";
+pub static LOADOUT_FILENAME: &str = "persistent-loadout.json";
 
 #[derive(Error, Debug)]
 pub enum PluginError {
     #[error(transparent)]
-    IO(#[from] std::io::Error),
+    InputOutput(#[from] std::io::Error),
     #[error(transparent)]
-    FindDataRef(#[from] FindError),
+    FromUtf8Error(#[from] std::string::FromUtf8Error),
+    #[error(transparent)]
+    JsonError(#[from] serde_json::Error),
+    #[error(transparent)]
+    FindError(#[from] xplm::data::borrowed::FindError),
     #[error("no cold and dark startup")]
-    NoColdAndDarkStartup,
+    NotColdAndDark,
 }
 
 pub struct PersistentLoadoutPlugin {
@@ -32,7 +36,7 @@ impl Plugin for PersistentLoadoutPlugin {
     type Error = PluginError;
 
     fn start() -> Result<Self, Self::Error> {
-        debugln!("starting up...");
+        debugln!("starting up");
 
         let plugin = Self {
             handler: FlightLoop::new(FlightLoopHandler),
@@ -44,10 +48,10 @@ impl Plugin for PersistentLoadoutPlugin {
     fn enable(&mut self) -> Result<(), Self::Error> {
         let startup_running: DataRef<i32> = DataRef::find("sim/operation/prefs/startup_running")?;
         if startup_running.get() != 0 {
-            return Err(PluginError::NoColdAndDarkStartup);
+            return Err(PluginError::NotColdAndDark);
         }
 
-        debugln!("enabled...");
+        debugln!("enabled");
         self.handler.schedule_after_loops(60);
 
         Ok(())
@@ -57,9 +61,9 @@ impl Plugin for PersistentLoadoutPlugin {
         if let Err(e) = LoadoutData::save_loadout() {
             debugln!("{e}");
         }
-        
+
         self.handler.deactivate();
-        debugln!("{NAME} disabled...");
+        debugln!("{NAME} disabled");
     }
 
     fn info(&self) -> PluginInfo {
