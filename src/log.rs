@@ -1,3 +1,4 @@
+/// Writes a message to the developer console and Log.txt file, with a newline
 #[macro_export]
 macro_rules! debugln {
     ($($arg:tt)*) => ({
@@ -6,8 +7,8 @@ macro_rules! debugln {
         let formatted_string = format!("{}: {}", $crate::plugin::NAME, formatted_string);
 
         match std::ffi::CString::new(formatted_string) {
-            Ok(c_str) => unsafe { ::xplm::XPLMDebugString(c_str.as_ptr()) },
-            Err(_) => unsafe { ::xplm::XPLMDebugString("[xplm] Invalid debug message\n\0".as_ptr() as *const _) }
+            Ok(c_str) => unsafe { $crate::XPLMDebugString(c_str.as_ptr()) },
+            Err(_) => unsafe { $crate::XPLMDebugString("[xplm] Invalid debug message\n\0".as_ptr() as *const _) }
         }
     });
 }
