@@ -9,7 +9,7 @@ use crate::debugln;
 use crate::flight_loop::FlightLoopHandler;
 use crate::loadout::LoadoutData;
 
-pub static NAME: &str = concat!("Persistent Loadout", " ", "v", env!("CARGO_PKG_VERSION"));
+pub static NAME: &str = concat!("Persistent Loadout v", env!("CARGO_PKG_VERSION"));
 static SIGNATURE: &str = concat!("com.x-plane.xplm.", env!("CARGO_PKG_NAME"));
 static DESCRIPTION: &str = "Persistent loadout for X-Plane";
 pub static LOADOUT_FILENAME: &str = "persistent-loadout.json";
