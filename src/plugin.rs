@@ -63,7 +63,7 @@ impl Plugin for PersistentLoadoutPlugin {
         }
 
         self.handler.deactivate();
-        debugln!("{NAME} disabled");
+        debugln!("disabled");
     }
 
     fn info(&self) -> PluginInfo {
