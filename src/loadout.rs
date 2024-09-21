@@ -10,7 +10,7 @@ use xplm::data::{ArrayRead, ArrayReadWrite, ReadOnly, ReadWrite, StringRead};
 use crate::debugln;
 use crate::plugin::{PluginError, LOADOUT_FILENAME};
 
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct Loadout {
     m_fuel: Vec<f32>,
 }
@@ -22,12 +22,17 @@ pub struct LoadoutData {
 
 impl LoadoutData {
     pub fn save_loadout() -> Result<(), PluginError> {
-        Self::from_file()?.update_from_sim()?.write_into_file()?;
+        Self::from_file()?
+            .get_from_sim()?
+            .write_into_file()?;
+
         Ok(())
     }
 
     pub fn restore_loadout() -> Result<(), PluginError> {
-        Self::from_file()?.write_into_sim()?;
+        Self::from_file()?
+            .write_into_sim()?;
+
         Ok(())
     }
 
@@ -58,25 +63,27 @@ impl LoadoutData {
         Ok(Self { file: loadout_file, loadout })
     }
 
-    fn update_from_sim(mut self) -> Result<Self, PluginError> {
+    fn get_from_sim(mut self) -> Result<Self, PluginError> {
         debugln!("getting loadout from X-Plane");
-
         let m_fuel: DataRef<[f32], ReadOnly> = DataRef::find("sim/flightmodel/weight/m_fuel")?;
-        let loadout = Loadout { m_fuel: m_fuel.as_vec() };
+
+        let loadout = Loadout {
+            m_fuel: m_fuel.as_vec()
+        };
 
         self.loadout = Some(loadout);
-
         Ok(self)
     }
 
     fn write_into_sim(self) -> Result<Self, PluginError> {
         if let Some(loadout) = self.loadout.as_ref() {
             debugln!("setting loadout in X-Plane");
-
             let mut m_fuel: DataRef<[f32], ReadWrite> = DataRef::find("sim/flightmodel/weight/m_fuel")?
                 .writeable()?;
 
-            m_fuel.set(loadout.m_fuel.as_slice());
+            // Write fuel levels into sim
+            let new_m_fuel = loadout.m_fuel.as_slice();
+            m_fuel.set(new_m_fuel);
         }
 
         Ok(self)
@@ -85,7 +92,6 @@ impl LoadoutData {
     fn write_into_file(self) -> std::io::Result<Self> {
         if let Some(loadout) = self.loadout.as_ref() {
             debugln!("writing loadout to file {}", self.file.to_string_lossy());
-
             let json_data = serde_json::to_string_pretty(loadout)?;
             let mut file = File::create(self.file.as_os_str())?;
             file.write_all(json_data.as_bytes())?;
