@@ -58,7 +58,7 @@ impl Plugin for PersistentLoadoutPlugin {
             return Err(PluginError::NotColdAndDark);
         }
 
-        debug!("{NAME} enabling... ");
+        debug!("{NAME} enabling flight loop callback... ");
 
         // After enabling our plugin, we need to wait for the flight loop to start,
         // so our datarefs are ready and accessible.

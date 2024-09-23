@@ -141,7 +141,7 @@ impl LoadoutData {
             let json_data = serde_json::to_string_pretty(loadout)?;
             let mut file = File::create(self.file.as_os_str())?;
             file.write_all(json_data.as_bytes())?;
-            
+
             debugln!("{NAME} wrote loadout into file {}", self.file.to_string_lossy());
         }
 
