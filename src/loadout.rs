@@ -129,6 +129,8 @@ impl LoadoutData {
             // Write fuel levels into sim...
             let new_m_fuel = loadout.m_fuel.as_slice();
             m_fuel.set(new_m_fuel);
+
+            debugln!("{NAME} read loadout from file {}", self.file.to_string_lossy());
         }
 
         Ok(self)
@@ -136,10 +138,11 @@ impl LoadoutData {
 
     fn write_into_file(self) -> std::io::Result<Self> {
         if let Some(loadout) = self.loadout.as_ref() {
-            debugln!("writing loadout to file {}", self.file.to_string_lossy());
             let json_data = serde_json::to_string_pretty(loadout)?;
             let mut file = File::create(self.file.as_os_str())?;
             file.write_all(json_data.as_bytes())?;
+            
+            debugln!("{NAME} wrote loadout into file {}", self.file.to_string_lossy());
         }
 
         Ok(self)
