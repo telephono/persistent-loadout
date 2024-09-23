@@ -1,3 +1,6 @@
+// Copyright (c) 2024 telephono
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
+
 use xplm::flight_loop::FlightLoopCallback;
 
 use crate::loadout::LoadoutData;
