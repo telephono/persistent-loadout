@@ -5,8 +5,8 @@ clean:
 .PHONY: build/linux
 build/linux:
 	mkdir -p target/persistent-loadout/lin_x64
-	cargo build --release
-	cp target/release/libpersistent_loadout.so target/persistent-loadout/lin_x64/persistent-loadout.xpl
+	cross build --target x86_64-unknown-linux-gnu --release
+	cp target/x86_64-unknown-linux-gnu/release/libpersistent_loadout.so target/persistent-loadout/lin_x64/persistent-loadout.xpl
 
 .PHONY: build/windows
 build/windows:
@@ -16,4 +16,4 @@ build/windows:
 
 
 .PHONY: build/all
-build/all: build/linux build/windows
+build/all: build/windows build/linux
