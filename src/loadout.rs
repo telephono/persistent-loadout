@@ -57,7 +57,6 @@ impl LoadoutData {
             }
 
             Ok(true) => {
-                debugln!("{NAME} found loadout file {}", loadout_file.to_string_lossy());
                 let file = File::open(&loadout_file)?;
                 let reader = BufReader::new(&file);
                 let loadout = serde_json::from_reader(reader)?;
@@ -123,7 +122,7 @@ impl LoadoutData {
             new_generic_lights_switch[50] = loadout.autobrake;
             new_generic_lights_switch[84] = loadout.navigation;
 
-            debug!("{NAME} writing loadout into aircraft... ");
+            debug!("{NAME} writing loadout from file {} into aircraft... ", self.file.to_string_lossy());
 
             // Write equipment config into sim...
             generic_lights_switch.set(new_generic_lights_switch.as_slice());
