@@ -123,6 +123,8 @@ impl LoadoutData {
             new_generic_lights_switch[50] = loadout.autobrake;
             new_generic_lights_switch[84] = loadout.navigation;
 
+            debug!("{NAME} writing loadout into aircraft... ");
+
             // Write equipment config into sim...
             generic_lights_switch.set(new_generic_lights_switch.as_slice());
 
@@ -130,7 +132,7 @@ impl LoadoutData {
             let new_m_fuel = loadout.m_fuel.as_slice();
             m_fuel.set(new_m_fuel);
 
-            debugln!("{NAME} read loadout from file {}", self.file.to_string_lossy());
+            debugln!("done");
         }
 
         Ok(self)
@@ -138,11 +140,13 @@ impl LoadoutData {
 
     fn write_into_file(self) -> std::io::Result<Self> {
         if let Some(loadout) = self.loadout.as_ref() {
+            debug!("{NAME} writing loadout into file {}... ", self.file.to_string_lossy());
+
             let json_data = serde_json::to_string_pretty(loadout)?;
             let mut file = File::create(self.file.as_os_str())?;
             file.write_all(json_data.as_bytes())?;
 
-            debugln!("{NAME} wrote loadout into file {}", self.file.to_string_lossy());
+            debugln!("done");
         }
 
         Ok(self)

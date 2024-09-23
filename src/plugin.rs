@@ -41,7 +41,7 @@ impl Plugin for PersistentLoadoutPlugin {
     type Error = PluginError;
 
     fn start() -> Result<Self, Self::Error> {
-        debugln!("{NAME} starting up...");
+        debugln!("{NAME} starting up");
 
         let plugin = Self {
             handler: FlightLoop::new(FlightLoopHandler),
