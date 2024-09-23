@@ -1,8 +1,9 @@
 # Persistent Loadout Plugin for X-Plane 12
 
-This plugin saves and restores the fuel tank levels on leaving the aircraft and entering the aircraft in cold and dark.
+This plugin saves the fuel tank levels and the Auto Brake, Auto Thrust and VOR/INS/FMC settings on leaving the aircraft.
+On re-opening the aircraft, these settings are restored.
 
-The fuel tank levels are saved on a per livery basis in a JSON file `persistent-loadout.json` inside the livery's
+The settings are saved on a per livery basis in a JSON file `persistent-loadout.json` inside the livery's
 folder.
 
 ## Installation
