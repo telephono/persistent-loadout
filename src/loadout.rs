@@ -122,7 +122,7 @@ impl LoadoutData {
             new_generic_lights_switch[50] = loadout.autobrake;
             new_generic_lights_switch[84] = loadout.navigation;
 
-            debug!("{NAME} writing loadout from file {:?} into aircraft... ", self.file.to_string_lossy());
+            debug!("{NAME} reading loadout from file {:?}... ", self.file.to_string_lossy());
 
             // Write equipment config into sim...
             generic_lights_switch.set(new_generic_lights_switch.as_slice());
