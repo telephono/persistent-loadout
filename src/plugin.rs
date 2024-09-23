@@ -4,8 +4,8 @@ use xplm::data::borrowed::DataRef;
 use xplm::data::DataRead;
 use xplm::flight_loop::FlightLoop;
 use xplm::plugin::{Plugin, PluginInfo};
+use xplm::{debug, debugln};
 
-use crate::debugln;
 use crate::flight_loop::FlightLoopHandler;
 use crate::loadout::LoadoutData;
 
@@ -42,7 +42,7 @@ impl Plugin for PersistentLoadoutPlugin {
     type Error = PluginError;
 
     fn start() -> Result<Self, Self::Error> {
-        debugln!("starting up");
+        debugln!("{NAME} starting up...");
 
         let plugin = Self {
             handler: FlightLoop::new(FlightLoopHandler),
@@ -59,12 +59,13 @@ impl Plugin for PersistentLoadoutPlugin {
             return Err(PluginError::NotColdAndDark);
         }
 
-        debugln!("enabled");
+        debug!("{NAME} enabling... ");
 
         // After enabling our plugin, we need to wait for the flight loop to start,
         // so our datarefs are ready and accessible.
         self.handler.schedule_after_loops(60);
 
+        debugln!("done");
         Ok(())
     }
 
@@ -75,8 +76,9 @@ impl Plugin for PersistentLoadoutPlugin {
             debugln!("something went wrong: {error}");
         }
 
+        debug!("{NAME} disabling... ");
         self.handler.deactivate();
-        debugln!("disabled");
+        debugln!("done");
     }
 
     fn info(&self) -> PluginInfo {

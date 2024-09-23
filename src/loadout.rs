@@ -6,10 +6,10 @@ use serde::{Deserialize, Serialize};
 
 use xplm::data::borrowed::DataRef;
 use xplm::data::{ArrayRead, ArrayReadWrite, ReadOnly, ReadWrite, StringRead};
+use xplm::debugln;
 
-use crate::debugln;
 use crate::plugin::PluginError::UnexpectedArrayLengthError;
-use crate::plugin::{PluginError, LOADOUT_FILENAME};
+use crate::plugin::{PluginError, LOADOUT_FILENAME, NAME};
 
 #[derive(Serialize, Deserialize)]
 struct Loadout {
@@ -53,12 +53,12 @@ impl LoadoutData {
             Err(error) => return Err(error.into()),
 
             Ok(false) => {
-                debugln!("no loadout file {} found", loadout_file.to_string_lossy());
+                debugln!("{NAME} no loadout file {} found", loadout_file.to_string_lossy());
                 None
             }
 
             Ok(true) => {
-                debugln!("found loadout file {}", loadout_file.to_string_lossy());
+                debugln!("{NAME} found loadout file {}", loadout_file.to_string_lossy());
                 let file = File::open(&loadout_file)?;
                 let reader = BufReader::new(&file);
                 let loadout = serde_json::from_reader(reader)?;
@@ -70,7 +70,6 @@ impl LoadoutData {
     }
 
     fn get_from_sim(mut self) -> Result<Self, PluginError> {
-        debugln!("getting loadout from X-Plane");
         let m_fuel: DataRef<[f32], ReadOnly> = DataRef::find("sim/flightmodel/weight/m_fuel")?;
         let generic_lights_switch: DataRef<[f32], ReadOnly> = DataRef::find("sim/cockpit2/switches/generic_lights_switch")?;
 
@@ -103,7 +102,6 @@ impl LoadoutData {
 
     fn write_into_sim(self) -> Result<Self, PluginError> {
         if let Some(loadout) = self.loadout.as_ref() {
-            debugln!("setting loadout in X-Plane");
             let mut m_fuel: DataRef<[f32], ReadWrite> = DataRef::find("sim/flightmodel/weight/m_fuel")?
                 .writeable()?;
             let mut generic_lights_switch: DataRef<[f32], ReadWrite> = DataRef::find("sim/cockpit2/switches/generic_lights_switch")?
