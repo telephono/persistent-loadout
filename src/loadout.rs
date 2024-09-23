@@ -8,6 +8,7 @@ use xplm::data::borrowed::DataRef;
 use xplm::data::{ArrayRead, ArrayReadWrite, ReadOnly, ReadWrite, StringRead};
 
 use crate::debugln;
+use crate::plugin::PluginError::UnexpectedArrayLengthError;
 use crate::plugin::{PluginError, LOADOUT_FILENAME};
 
 #[derive(Serialize, Deserialize)]
@@ -24,6 +25,7 @@ pub struct LoadoutData {
 }
 
 impl LoadoutData {
+    /// Read loadout from sim and write it into a JSON file.
     pub fn save_loadout() -> Result<(), PluginError> {
         Self::from_file()?
             .get_from_sim()?
@@ -32,6 +34,7 @@ impl LoadoutData {
         Ok(())
     }
 
+    /// Read loadout from JSON file and write it into sim.
     pub fn restore_loadout() -> Result<(), PluginError> {
         Self::from_file()?
             .write_into_sim()?;
@@ -73,20 +76,19 @@ impl LoadoutData {
 
         let generic_lights_switch = generic_lights_switch.as_vec();
 
-        let autothrottle = match generic_lights_switch.get(49) {
-            Some(&autthrottle) => autthrottle,
-            None => 0.0,
-        };
+        // "sim/cockpit2/switches/generic_lights_switch" should be float[128]
+        // If it isn't, bail out...
+        if generic_lights_switch.len() < 128 {
+            return Err(UnexpectedArrayLengthError {
+                dataref: "sim/cockpit2/switches/generic_lights_switch".to_string(),
+                expected: 128,
+                found: generic_lights_switch.len(),
+            });
+        }
 
-        let autobrake = match generic_lights_switch.get(50) {
-            Some(&autobrake) => autobrake,
-            None => 0.0
-        };
-
-        let navigation = match generic_lights_switch.get(84) {
-            Some(&navigation) => navigation,
-            None => 0.0,
-        };
+        let autothrottle = generic_lights_switch[49];
+        let autobrake = generic_lights_switch[50];
+        let navigation = generic_lights_switch[84];
 
         let loadout = Loadout {
             m_fuel: m_fuel.as_vec(),
@@ -109,14 +111,23 @@ impl LoadoutData {
 
             // Write equipment into sim...
             let mut new_generic_lights_switch = generic_lights_switch.as_vec();
-            if new_generic_lights_switch.len() >= 128 {
-                new_generic_lights_switch[49] = loadout.autothrottle;
-                new_generic_lights_switch[50] = loadout.autobrake;
-                new_generic_lights_switch[84] = loadout.navigation;
-                generic_lights_switch.set(new_generic_lights_switch.as_slice());
-            } else {
-                debugln!("sim/cockpit2/switches/generic_lights_switch did not return at least 128 entries, skipping equipment setup");
+
+            // "sim/cockpit2/switches/generic_lights_switch" should be float[128]
+            // If it isn't, bail out...
+            if generic_lights_switch.len() < 128 {
+                return Err(UnexpectedArrayLengthError {
+                    dataref: "sim/cockpit2/switches/generic_lights_switch".to_string(),
+                    expected: 128,
+                    found: generic_lights_switch.len(),
+                });
             }
+
+            new_generic_lights_switch[49] = loadout.autothrottle;
+            new_generic_lights_switch[50] = loadout.autobrake;
+            new_generic_lights_switch[84] = loadout.navigation;
+
+            // Write equipment config into sim...
+            generic_lights_switch.set(new_generic_lights_switch.as_slice());
 
             // Write fuel levels into sim...
             let new_m_fuel = loadout.m_fuel.as_slice();

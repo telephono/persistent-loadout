@@ -2,9 +2,8 @@
 #[macro_export]
 macro_rules! debugln {
     ($($arg:tt)*) => ({
-        let mut formatted_string: String = std::fmt::format(std::format_args!($($arg)*));
-        formatted_string.push_str("\n");
-        let formatted_string = format!("{}: {}", $crate::plugin::NAME, formatted_string);
+        let message: String = std::fmt::format(std::format_args!($($arg)*));
+        let formatted_string = format!("{}: {message}\n", $crate::plugin::NAME);
 
         match std::ffi::CString::new(formatted_string) {
             Ok(c_str) => unsafe { $crate::XPLMDebugString(c_str.as_ptr()) },

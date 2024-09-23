@@ -24,6 +24,12 @@ pub enum PluginError {
     JsonError(#[from] serde_json::Error),
     #[error(transparent)]
     FindError(#[from] xplm::data::borrowed::FindError),
+    #[error("expected {dataref:?} with a length of {expected:?}, found {found:?}")]
+    UnexpectedArrayLengthError {
+        dataref: String,
+        expected: usize,
+        found: usize,
+    },
     #[error("no cold and dark startup")]
     NotColdAndDark,
 }
@@ -46,20 +52,27 @@ impl Plugin for PersistentLoadoutPlugin {
     }
 
     fn enable(&mut self) -> Result<(), Self::Error> {
+        // We only enable our plugin, if the user did startup the aircraft in cold & dark,
+        // otherwise we return an error and the plugin remains disabled.
         let startup_running: DataRef<i32> = DataRef::find("sim/operation/prefs/startup_running")?;
         if startup_running.get() != 0 {
             return Err(PluginError::NotColdAndDark);
         }
 
         debugln!("enabled");
+
+        // After enabling our plugin, we need to wait for the flight loop to start,
+        // so our datarefs are ready and accessible.
         self.handler.schedule_after_loops(60);
 
         Ok(())
     }
 
     fn disable(&mut self) {
-        if let Err(e) = LoadoutData::save_loadout() {
-            debugln!("{e}");
+        // When the plugin gets disabled (aka the sim shuts down or the user selects another aircraft)
+        // we save the current loadout...
+        if let Err(error) = LoadoutData::save_loadout() {
+            debugln!("something went wrong: {error}");
         }
 
         self.handler.deactivate();
