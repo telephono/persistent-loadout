@@ -1,4 +1,3 @@
-use xplm::debugln;
 use xplm::flight_loop::FlightLoopCallback;
 
 use crate::loadout::LoadoutData;

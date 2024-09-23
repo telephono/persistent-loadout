@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 
 use xplm::data::borrowed::DataRef;
 use xplm::data::{ArrayRead, ArrayReadWrite, ReadOnly, ReadWrite, StringRead};
-use xplm::debugln;
 
 use crate::plugin::PluginError::UnexpectedArrayLengthError;
 use crate::plugin::{PluginError, LOADOUT_FILENAME, NAME};

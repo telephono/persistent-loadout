@@ -4,7 +4,6 @@ use xplm::data::borrowed::DataRef;
 use xplm::data::DataRead;
 use xplm::flight_loop::FlightLoop;
 use xplm::plugin::{Plugin, PluginInfo};
-use xplm::{debug, debugln};
 
 use crate::flight_loop::FlightLoopHandler;
 use crate::loadout::LoadoutData;
