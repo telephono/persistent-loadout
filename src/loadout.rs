@@ -52,7 +52,7 @@ impl LoadoutData {
             Err(error) => return Err(error.into()),
 
             Ok(false) => {
-                debugln!("{NAME} no loadout file {} found", loadout_file.to_string_lossy());
+                debugln!("{NAME} no loadout file {:?} found", loadout_file.to_string_lossy());
                 None
             }
 
@@ -122,7 +122,7 @@ impl LoadoutData {
             new_generic_lights_switch[50] = loadout.autobrake;
             new_generic_lights_switch[84] = loadout.navigation;
 
-            debug!("{NAME} writing loadout from file {} into aircraft... ", self.file.to_string_lossy());
+            debug!("{NAME} writing loadout from file {:?} into aircraft... ", self.file.to_string_lossy());
 
             // Write equipment config into sim...
             generic_lights_switch.set(new_generic_lights_switch.as_slice());
@@ -139,7 +139,7 @@ impl LoadoutData {
 
     fn write_into_file(self) -> std::io::Result<Self> {
         if let Some(loadout) = self.loadout.as_ref() {
-            debug!("{NAME} writing loadout into file {}... ", self.file.to_string_lossy());
+            debug!("{NAME} writing loadout into file {:?}... ", self.file.to_string_lossy());
 
             let json_data = serde_json::to_string_pretty(loadout)?;
             let mut file = File::create(self.file.as_os_str())?;
