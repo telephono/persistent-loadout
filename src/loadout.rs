@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 use xplm::data::borrowed::DataRef;
-use xplm::data::{ArrayRead, ArrayReadWrite, ReadOnly, ReadWrite, StringRead};
+use xplm::data::{ArrayRead, ArrayReadWrite, ReadWrite, StringRead};
 
 use crate::plugin::PluginError::UnexpectedArrayLengthError;
 use crate::plugin::{PluginError, LOADOUT_FILENAME, NAME};
@@ -45,7 +45,7 @@ impl LoadoutData {
     }
 
     fn from_file() -> Result<Self, PluginError> {
-        let acf_livery_path: DataRef<[u8], ReadOnly> = DataRef::find("sim/aircraft/view/acf_livery_path")?;
+        let acf_livery_path: DataRef<[u8]> = DataRef::find("sim/aircraft/view/acf_livery_path")?;
         let acf_livery_path = acf_livery_path.get_as_string()?;
 
         let mut loadout_file = PathBuf::from(acf_livery_path);
@@ -75,8 +75,8 @@ impl LoadoutData {
     }
 
     fn get_from_sim(mut self) -> Result<Self, PluginError> {
-        let m_fuel: DataRef<[f32], ReadOnly> = DataRef::find("sim/flightmodel/weight/m_fuel")?;
-        let generic_lights_switch: DataRef<[f32], ReadOnly> = DataRef::find("sim/cockpit2/switches/generic_lights_switch")?;
+        let m_fuel: DataRef<[f32]> = DataRef::find("sim/flightmodel/weight/m_fuel")?;
+        let generic_lights_switch: DataRef<[f32]> = DataRef::find("sim/cockpit2/switches/generic_lights_switch")?;
 
         let generic_lights_switch = generic_lights_switch.as_vec();
 
