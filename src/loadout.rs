@@ -79,16 +79,9 @@ impl LoadoutData {
 
         let generic_lights_switch = generic_lights_switch.as_vec();
 
-        // "sim/cockpit2/switches/generic_lights_switch" should be float[128]
-        // If it isn't, bail out...
-        if generic_lights_switch.len() < 128 {
-            debugln!("{NAME} \"sim/cockpit2/switches/generic_lights_switch\" does not have at least 128 values");
-            return Err(FindError::WrongType.into());
-        }
-
-        let autothrottle = generic_lights_switch[49];
-        let autobrake = generic_lights_switch[50];
-        let navigation = generic_lights_switch[84];
+        let autothrottle = generic_lights_switch.get(49).copied().unwrap_or_default();
+        let autobrake = generic_lights_switch.get(50).copied().unwrap_or_default();
+        let navigation = generic_lights_switch.get(84).copied().unwrap_or_default();
 
         let loadout = Loadout {
             m_fuel: m_fuel.as_vec(),
@@ -113,8 +106,8 @@ impl LoadoutData {
 
             // "sim/cockpit2/switches/generic_lights_switch" should be float[128]
             // If it isn't, bail out...
-            if generic_lights_switch.len() < 128 {
-                debugln!("{NAME} \"sim/cockpit2/switches/generic_lights_switch\" does not have at least 128 values");
+            if new_generic_lights_switch.len() < 128 {
+                debugln!("{NAME} \"sim/cockpit2/switches/generic_lights_switch\" didn't return at least 128 values");
                 return Err(FindError::WrongType.into());
             }
 
