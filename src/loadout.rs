@@ -62,8 +62,12 @@ impl LoadoutData {
             Ok(true) => {
                 let file = File::open(&loadout_file)?;
                 let reader = BufReader::new(&file);
-                let loadout = serde_json::from_reader(reader)?;
-                Some(loadout)
+
+                // Parse JSON file, but return None if there was a parsing error...
+                serde_json::from_reader(reader).unwrap_or_else(|error| {
+                    debugln!("{NAME} could not parse loadout from file {:?}: {error}", loadout_file.to_string_lossy());
+                    None
+                })
             }
         };
 
