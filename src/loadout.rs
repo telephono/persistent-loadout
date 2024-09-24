@@ -7,10 +7,9 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-use xplm::data::borrowed::DataRef;
+use xplm::data::borrowed::{DataRef, FindError};
 use xplm::data::{ArrayRead, ArrayReadWrite, ReadWrite, StringRead};
 
-use crate::plugin::PluginError::UnexpectedArrayLengthError;
 use crate::plugin::{PluginError, LOADOUT_FILENAME, NAME};
 
 #[derive(Serialize, Deserialize)]
@@ -83,11 +82,8 @@ impl LoadoutData {
         // "sim/cockpit2/switches/generic_lights_switch" should be float[128]
         // If it isn't, bail out...
         if generic_lights_switch.len() < 128 {
-            return Err(UnexpectedArrayLengthError {
-                dataref: "sim/cockpit2/switches/generic_lights_switch".to_string(),
-                expected: 128,
-                found: generic_lights_switch.len(),
-            });
+            debugln!("{NAME} \"sim/cockpit2/switches/generic_lights_switch\" does not have at least 128 values");
+            return Err(FindError::WrongType.into());
         }
 
         let autothrottle = generic_lights_switch[49];
@@ -118,11 +114,8 @@ impl LoadoutData {
             // "sim/cockpit2/switches/generic_lights_switch" should be float[128]
             // If it isn't, bail out...
             if generic_lights_switch.len() < 128 {
-                return Err(UnexpectedArrayLengthError {
-                    dataref: "sim/cockpit2/switches/generic_lights_switch".to_string(),
-                    expected: 128,
-                    found: generic_lights_switch.len(),
-                });
+                debugln!("{NAME} \"sim/cockpit2/switches/generic_lights_switch\" does not have at least 128 values");
+                return Err(FindError::WrongType.into());
             }
 
             new_generic_lights_switch[49] = loadout.autothrottle;

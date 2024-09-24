@@ -26,16 +26,8 @@ pub enum PluginError {
     JsonError(#[from] serde_json::Error),
     #[error(transparent)]
     FindError(#[from] xplm::data::borrowed::FindError),
-    #[error("expected {dataref:?} with a length of {expected:?}, found {found:?}")]
-    UnexpectedArrayLengthError {
-        dataref: String,
-        expected: usize,
-        found: usize,
-    },
-    #[error("{NAME} aircraft with ICAO code {acf_icao:?} not supported")]
-    AircraftNotSupported {
-        acf_icao: String,
-    },
+    #[error("{NAME} aircraft with ICAO code {0:?} not supported")]
+    AircraftNotSupported(String),
     #[error("{NAME} detected startup with engines running")]
     StartupWithEnginesRunning,
 }
@@ -62,7 +54,7 @@ impl Plugin for PersistentLoadoutPlugin {
         let acf_icao: DataRef<[u8]> = DataRef::find("sim/aircraft/view/acf_ICAO")?;
         let acf_icao = acf_icao.get_as_string()?;
         if acf_icao != "B720" {
-            return Err(PluginError::AircraftNotSupported { acf_icao });
+            return Err(PluginError::AircraftNotSupported(acf_icao));
         }
 
         // We only enable our plugin, if the user did startup the aircraft in cold & dark,
