@@ -36,8 +36,8 @@ pub enum PluginError {
     AircraftNotSupported {
         acf_icao: String,
     },
-    #[error("no cold and dark startup")]
-    NotColdAndDark,
+    #[error("{NAME} detected startup with engines running")]
+    StartupWithEnginesRunning,
 }
 
 pub struct PersistentLoadoutPlugin {
@@ -69,7 +69,7 @@ impl Plugin for PersistentLoadoutPlugin {
         // otherwise we return an error and the plugin remains disabled.
         let startup_running: DataRef<i32> = DataRef::find("sim/operation/prefs/startup_running")?;
         if startup_running.get() != 0 {
-            return Err(PluginError::NotColdAndDark);
+            return Err(PluginError::StartupWithEnginesRunning);
         }
 
         debug!("{NAME} enabling flight loop callback... ");
