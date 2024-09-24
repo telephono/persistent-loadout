@@ -4,7 +4,7 @@
 use thiserror::Error;
 
 use xplm::data::borrowed::DataRef;
-use xplm::data::DataRead;
+use xplm::data::{DataRead, StringRead};
 use xplm::flight_loop::FlightLoop;
 use xplm::plugin::{Plugin, PluginInfo};
 
@@ -32,6 +32,10 @@ pub enum PluginError {
         expected: usize,
         found: usize,
     },
+    #[error("{NAME} aircraft with ICAO code {acf_icao:?} not supported")]
+    AircraftNotSupported {
+        acf_icao: String,
+    },
     #[error("no cold and dark startup")]
     NotColdAndDark,
 }
@@ -54,6 +58,13 @@ impl Plugin for PersistentLoadoutPlugin {
     }
 
     fn enable(&mut self) -> Result<(), Self::Error> {
+        // We only enable our plugin, if the aircraft is supported.
+        let acf_icao: DataRef<[u8]> = DataRef::find("sim/aircraft/view/acf_ICAO")?;
+        let acf_icao = acf_icao.get_as_string()?;
+        if acf_icao != "B720" {
+            return Err(PluginError::AircraftNotSupported { acf_icao });
+        }
+
         // We only enable our plugin, if the user did startup the aircraft in cold & dark,
         // otherwise we return an error and the plugin remains disabled.
         let startup_running: DataRef<i32> = DataRef::find("sim/operation/prefs/startup_running")?;
