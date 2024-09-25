@@ -64,7 +64,7 @@ impl LoadoutData {
 
                 // Parse JSON file, but return None if there was a parsing error...
                 serde_json::from_reader(reader).unwrap_or_else(|error| {
-                    debugln!("{NAME} could not parse loadout from file {:?}: {error}", loadout_file.to_string_lossy());
+                    debugln!("{NAME} could not parse loadout: {error}");
                     None
                 })
             }
@@ -96,6 +96,9 @@ impl LoadoutData {
 
     fn write_into_sim(self) -> Result<Self, PluginError> {
         if let Some(loadout) = self.loadout.as_ref() {
+            debugln!("{NAME} reading loadout from file {:?}", self.file.to_string_lossy());
+
+            // Set up writeable DataRef access...
             let mut m_fuel: DataRef<[f32], ReadWrite> = DataRef::find("sim/flightmodel/weight/m_fuel")?
                 .writeable()?;
             let mut generic_lights_switch: DataRef<[f32], ReadWrite> = DataRef::find("sim/cockpit2/switches/generic_lights_switch")?
@@ -115,16 +118,12 @@ impl LoadoutData {
             new_generic_lights_switch[50] = loadout.autobrake;
             new_generic_lights_switch[84] = loadout.navigation;
 
-            debug!("{NAME} reading loadout from file {:?}... ", self.file.to_string_lossy());
-
             // Write equipment config into sim...
             generic_lights_switch.set(new_generic_lights_switch.as_slice());
 
             // Write fuel levels into sim...
             let new_m_fuel = loadout.m_fuel.as_slice();
             m_fuel.set(new_m_fuel);
-
-            debugln!("done");
         }
 
         Ok(self)
@@ -132,13 +131,11 @@ impl LoadoutData {
 
     fn write_into_file(self) -> std::io::Result<Self> {
         if let Some(loadout) = self.loadout.as_ref() {
-            debug!("{NAME} writing loadout into file {:?}... ", self.file.to_string_lossy());
+            debugln!("{NAME} writing loadout into file {:?}", self.file.to_string_lossy());
 
             let json_data = serde_json::to_string_pretty(loadout)?;
             let mut file = File::create(self.file.as_os_str())?;
             file.write_all(json_data.as_bytes())?;
-
-            debugln!("done");
         }
 
         Ok(self)

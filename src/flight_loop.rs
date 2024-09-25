@@ -17,8 +17,7 @@ impl FlightLoopCallback for FlightLoopHandler {
         }
 
         // We are done. We don't need to run our flight loop callback anymore...
-        debug!("{NAME} disabling flight loop callback... ");
+        debugln!("{NAME} disabling flight loop callback");
         state.deactivate();
-        debugln!("done");
     }
 }

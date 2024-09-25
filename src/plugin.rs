@@ -13,7 +13,7 @@ use crate::loadout::LoadoutData;
 
 pub static NAME: &str = concat!("Persistent Loadout v", env!("CARGO_PKG_VERSION"));
 static SIGNATURE: &str = concat!("com.x-plane.xplm.", env!("CARGO_PKG_NAME"));
-static DESCRIPTION: &str = "Persistent loadout for X-Plane";
+static DESCRIPTION: &str = "Persistent Loadout for Shenshee's B720";
 pub static LOADOUT_FILENAME: &str = "persistent-loadout.json";
 
 #[derive(Error, Debug)]
@@ -64,26 +64,23 @@ impl Plugin for PersistentLoadoutPlugin {
             return Err(PluginError::StartupWithEnginesRunning);
         }
 
-        debug!("{NAME} enabling flight loop callback... ");
-
         // After enabling our plugin, we need to wait for the flight loop to start,
         // so our datarefs are ready and accessible.
+        debugln!("{NAME} enabling flight loop callback");
         self.handler.schedule_after_loops(60);
 
-        debugln!("done");
         Ok(())
     }
 
     fn disable(&mut self) {
-        // When the plugin gets disabled (aka the sim shuts down or the user selects another aircraft)
-        // we save the current loadout...
+        // When the plugin gets disabled (aka the sim shuts down or the user selects another
+        // aircraft) we save the current loadout...
         if let Err(error) = LoadoutData::save_loadout() {
             debugln!("something went wrong: {error}");
         }
 
-        debug!("{NAME} disabling... ");
+        debugln!("{NAME} disabling");
         self.handler.deactivate();
-        debugln!("done");
     }
 
     fn info(&self) -> PluginInfo {
