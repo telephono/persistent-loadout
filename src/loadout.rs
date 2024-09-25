@@ -7,7 +7,7 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-use xplm::data::borrowed::{DataRef, FindError};
+use xplm::data::borrowed::DataRef;
 use xplm::data::{ArrayRead, ArrayReadWrite, ReadWrite, StringRead};
 
 use crate::plugin::{PluginError, LOADOUT_FILENAME, NAME};
@@ -98,32 +98,29 @@ impl LoadoutData {
         if let Some(loadout) = self.loadout.as_ref() {
             debugln!("{NAME} reading loadout from file {:?}", self.file.to_string_lossy());
 
-            // Set up writeable DataRef access...
+            // Write fuel levels into sim...
             let mut m_fuel: DataRef<[f32], ReadWrite> = DataRef::find("sim/flightmodel/weight/m_fuel")?
                 .writeable()?;
+            m_fuel.set(loadout.m_fuel.as_slice());
+
+            // Write equipment config into sim...
             let mut generic_lights_switch: DataRef<[f32], ReadWrite> = DataRef::find("sim/cockpit2/switches/generic_lights_switch")?
                 .writeable()?;
 
-            // Write equipment into sim...
-            let mut new_generic_lights_switch = generic_lights_switch.as_vec();
+            let new_generic_lights_switch: Vec<f32> = generic_lights_switch.as_vec()
+                .into_iter()
+                .enumerate()
+                .map(|(idx, value)| {
+                    match idx {
+                        49 => loadout.autothrottle,
+                        50 => loadout.autobrake,
+                        84 => loadout.navigation,
+                        _ => value,
+                    }
+                })
+                .collect();
 
-            // "sim/cockpit2/switches/generic_lights_switch" should be float[128]
-            // If it isn't, bail out...
-            if new_generic_lights_switch.len() < 128 {
-                debugln!("{NAME} \"sim/cockpit2/switches/generic_lights_switch\" didn't return at least 128 values");
-                return Err(FindError::WrongType.into());
-            }
-
-            new_generic_lights_switch[49] = loadout.autothrottle;
-            new_generic_lights_switch[50] = loadout.autobrake;
-            new_generic_lights_switch[84] = loadout.navigation;
-
-            // Write equipment config into sim...
             generic_lights_switch.set(new_generic_lights_switch.as_slice());
-
-            // Write fuel levels into sim...
-            let new_m_fuel = loadout.m_fuel.as_slice();
-            m_fuel.set(new_m_fuel);
         }
 
         Ok(self)
