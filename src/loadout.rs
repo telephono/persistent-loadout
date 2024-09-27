@@ -17,6 +17,7 @@ struct Loadout {
     m_fuel: Vec<f32>,
     autobrake: f32,
     autothrottle: f32,
+    hf_antenna: f32,
     navigation: f32,
 }
 
@@ -81,12 +82,14 @@ impl LoadoutData {
 
         let autothrottle = generic_lights_switch.get(49).copied().unwrap_or_default();
         let autobrake = generic_lights_switch.get(50).copied().unwrap_or_default();
+        let hf_antenna = generic_lights_switch.get(56).copied().unwrap_or_default();
         let navigation = generic_lights_switch.get(84).copied().unwrap_or_default();
 
         let loadout = Loadout {
             m_fuel: m_fuel.as_vec(),
             autobrake,
             autothrottle,
+            hf_antenna,
             navigation,
         };
 
@@ -114,6 +117,7 @@ impl LoadoutData {
                     match idx {
                         49 => loadout.autothrottle,
                         50 => loadout.autobrake,
+                        56 => loadout.hf_antenna,
                         84 => loadout.navigation,
                         _ => value,
                     }
