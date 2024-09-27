@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 use std::fs::File;
-use std::io::{BufReader, Write};
+use std::io::{Read, Write};
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -60,11 +60,16 @@ impl LoadoutData {
             }
 
             Ok(true) => {
-                let file = File::open(&loadout_file)?;
-                let reader = BufReader::new(&file);
+                // Read JSON into a String first, since this should be faster than
+                // using `serde_json::from_reader`
+                // see: https://github.com/serde-rs/json/issues/160
+                let mut f = File::open(&loadout_file)?;
+                let mut buffer = String::new();
 
-                // Parse JSON file, but return None if there was a parsing error...
-                serde_json::from_reader(reader).unwrap_or_else(|error| {
+                f.read_to_string(&mut buffer)?;
+
+                // Parse JSON, but return None if there was a parsing error...
+                serde_json::from_str(&buffer).unwrap_or_else(|error| {
                     debugln!("{NAME} could not parse loadout: {error}");
                     None
                 })
