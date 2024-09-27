@@ -15,9 +15,13 @@ use crate::plugin::{PluginError, LOADOUT_FILENAME, NAME};
 #[derive(Serialize, Deserialize)]
 struct Loadout {
     m_fuel: Vec<f32>,
+    #[serde(default)]
     autobrake: f32,
+    #[serde(default)]
     autothrottle: f32,
+    #[serde(default)]
     hf_antenna: f32,
+    #[serde(default)]
     navigation: f32,
 }
 
