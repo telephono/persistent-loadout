@@ -1,4 +1,4 @@
-# Persistent Loadout Plugin for X-Plane 12
+# Persistent Loadout Plugin for Shenshee's B720
 
 This plugin saves the fuel tank levels and the Auto Brake, Auto Thrust, HF antenna and VOR/INS/FMC settings on leaving
 the aircraft. On re-opening the aircraft, these settings are restored.
