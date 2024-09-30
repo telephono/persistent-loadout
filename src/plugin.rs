@@ -28,6 +28,8 @@ pub enum PluginError {
     FindError(#[from] xplm::data::borrowed::FindError),
     #[error("{NAME} aircraft with ICAO code {0:?} not supported")]
     AircraftNotSupported(String),
+    #[error("{NAME} no path to {:?}", LOADOUT_FILENAME)]
+    MissingPath,
     #[error("{NAME} detected startup with engines running")]
     StartupWithEnginesRunning,
 }
