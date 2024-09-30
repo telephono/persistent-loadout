@@ -1,0 +1,20 @@
+name: Release
+
+on:
+  push:
+    branches: [ "add-release-workflow" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Cross
+        run: cargo install cross
+      - name: Build
+        run: make build/all
