@@ -10,7 +10,8 @@ use serde::{Deserialize, Serialize};
 use xplm::data::borrowed::DataRef;
 use xplm::data::{ArrayRead, ArrayReadWrite, ReadWrite, StringRead};
 
-use crate::plugin::{PluginError, LOADOUT_FILENAME, NAME};
+use crate::plugin::PluginError;
+use crate::plugin::{LOADOUT_FILENAME, NAME};
 
 #[derive(Serialize, Deserialize)]
 struct Loadout {
