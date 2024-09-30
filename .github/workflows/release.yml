@@ -2,7 +2,8 @@ name: Release
 
 on:
   push:
-    branches: [ "add-release-workflow" ]
+    branches: [ "main" ]
+    tags: [ "v*.*.*" ]
 
 env:
   CARGO_TERM_COLOR: always
