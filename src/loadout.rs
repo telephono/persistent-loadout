@@ -61,10 +61,24 @@ impl LoadoutData {
         let acf_livery_path = acf_livery_path.get_as_string()?;
         debugln!("{NAME} acf_livery_path {acf_livery_path:?}");
 
-        let mut file = PathBuf::from(acf_livery_path);
-        file.push(LOADOUT_FILENAME);
+        let mut file_path: PathBuf;
 
-        Ok(Self { file: Some(file), loadout: None })
+        // Set up a valid livery path for default livery (empty `acf_livery_path`)
+        if acf_livery_path.is_empty() {
+            // TODO: 
+            // Do we need the aircraft path here?
+            // We might need to introduce XPLMGetNthAircraft here...
+            file_path = PathBuf::from(acf_livery_path.as_str());
+            file_path.push("liveries");
+            file_path.push("Default");
+        } else {
+            file_path = PathBuf::from(acf_livery_path.as_str());
+            file_path.push(LOADOUT_FILENAME);
+        }
+
+        debugln!("{NAME} loadout file path {file_path:?}");
+
+        Ok(Self { file: Some(file_path), loadout: None })
     }
 
     /// Read the loadout from a JSON file, but only if `self.file` is set.
@@ -163,6 +177,16 @@ impl LoadoutData {
 
     fn write_into_file(self) -> Result<Self, PluginError> {
         if let (Some(file), Some(loadout)) = (self.file.as_ref(), self.loadout.as_ref()) {
+            // Check if path to loadout file exists, create it otherwise
+            if let Some(file_path) = file.parent() {
+                if !file_path.try_exists()? {
+                    debugln!("{NAME} creating directory for livery {:?}...", file_path);
+                    // TODO:
+                    // Don't try to create the directory just yet. We need to verify it first...
+                    // std::fs::create_dir_all(file_path)?;
+                }
+            };
+
             debugln!("{NAME} writing loadout into file {:?}", file.to_string_lossy());
             let json_data = serde_json::to_string_pretty(loadout)?;
             let mut file = File::create(file.as_os_str())?;
