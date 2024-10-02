@@ -59,6 +59,7 @@ impl LoadoutData {
     fn new() -> Result<Self, PluginError> {
         let acf_livery_path: DataRef<[u8]> = DataRef::find("sim/aircraft/view/acf_livery_path")?;
         let acf_livery_path = acf_livery_path.get_as_string()?;
+        debugln!("{NAME} acf_livery_path {acf_livery_path:?}");
 
         let mut file = PathBuf::from(acf_livery_path);
         file.push(LOADOUT_FILENAME);
