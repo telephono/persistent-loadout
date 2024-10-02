@@ -13,6 +13,12 @@ use xplm::data::{ArrayRead, ArrayReadWrite, ReadWrite, StringRead};
 use crate::plugin::PluginError;
 use crate::plugin::{LOADOUT_FILENAME, NAME};
 
+// Light switch indices for different equipment configururations
+const AUTOTHROTTLE: usize = 49;
+const AUTOBRAKE: usize = 50;
+const HF_ANTENNA: usize = 56;
+const NAVIGATION: usize = 84;
+
 #[derive(Serialize, Deserialize)]
 struct Loadout {
     m_fuel: Vec<f32>,
@@ -103,10 +109,10 @@ impl LoadoutData {
 
         let generic_lights_switch = generic_lights_switch.as_vec();
 
-        let autothrottle = generic_lights_switch.get(49).copied().unwrap_or_default();
-        let autobrake = generic_lights_switch.get(50).copied().unwrap_or_default();
-        let hf_antenna = generic_lights_switch.get(56).copied().unwrap_or_default();
-        let navigation = generic_lights_switch.get(84).copied().unwrap_or_default();
+        let autothrottle = generic_lights_switch.get(AUTOTHROTTLE).copied().unwrap_or_default();
+        let autobrake = generic_lights_switch.get(AUTOBRAKE).copied().unwrap_or_default();
+        let hf_antenna = generic_lights_switch.get(HF_ANTENNA).copied().unwrap_or_default();
+        let navigation = generic_lights_switch.get(NAVIGATION).copied().unwrap_or_default();
 
         self.loadout = Some(
             Loadout {
@@ -139,10 +145,10 @@ impl LoadoutData {
                 .enumerate()
                 .map(|(idx, value)| {
                     match idx {
-                        49 => loadout.autothrottle,
-                        50 => loadout.autobrake,
-                        56 => loadout.hf_antenna,
-                        84 => loadout.navigation,
+                        AUTOTHROTTLE => loadout.autothrottle,
+                        AUTOBRAKE => loadout.autobrake,
+                        HF_ANTENNA => loadout.hf_antenna,
+                        NAVIGATION => loadout.navigation,
                         _ => value,
                     }
                 })
