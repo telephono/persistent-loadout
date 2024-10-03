@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use xplm::data::borrowed::DataRef;
 use xplm::data::{ArrayRead, ArrayReadWrite, ReadWrite, StringRead};
 
-use crate::plugin::PluginError;
+use crate::plugin::{AircraftModel, PluginError};
 use crate::plugin::{LOADOUT_FILENAME, NAME};
 
 // Light switch indices for different equipment configururations
@@ -40,18 +40,14 @@ pub struct LoadoutData {
 impl LoadoutData {
     /// Read loadout from sim and write it into a JSON file.
     pub fn save_loadout() -> Result<(), PluginError> {
-        Self::new()?
-            .loadout_from_sim()?
-            .write_into_file()?;
+        Self::new()?.loadout_from_sim()?.write_into_file()?;
 
         Ok(())
     }
 
     /// Read loadout from JSON file and write it into sim.
     pub fn restore_loadout() -> Result<(), PluginError> {
-        Self::new()?
-            .loadout_from_file()?
-            .write_into_sim()?;
+        Self::new()?.loadout_from_file()?.write_into_sim()?;
 
         Ok(())
     }
@@ -60,16 +56,38 @@ impl LoadoutData {
         let acf_livery_path: DataRef<[u8]> = DataRef::find("sim/aircraft/view/acf_livery_path")?;
         let acf_livery_path = acf_livery_path.get_as_string()?;
 
-        let mut file = PathBuf::from(acf_livery_path);
-        file.push(LOADOUT_FILENAME);
+        // Set up a valid livery path for default livery (empty `acf_livery_path`)
+        let mut file_path: PathBuf;
 
-        Ok(Self { file: Some(file), loadout: None })
+        if acf_livery_path.is_empty() {
+            // Build livery path from based on aircraft path
+            let aircraft_model = AircraftModel::new(0)?;
+            file_path = PathBuf::new();
+            file_path.push(aircraft_model.relative_out_path());
+            file_path.push("liveries");
+            file_path.push(format!(
+                "Default {}",
+                aircraft_model.out_file_stem().to_string_lossy()
+            ));
+        } else {
+            file_path = PathBuf::from(acf_livery_path.as_str());
+        }
+
+        file_path.push(LOADOUT_FILENAME);
+
+        Ok(Self {
+            file: Some(file_path),
+            loadout: None,
+        })
     }
 
     /// Read the loadout from a JSON file, but only if `self.file` is set.
     fn loadout_from_file(mut self) -> Result<Self, PluginError> {
         if let Some(file) = self.file.as_ref() {
-            debugln!("{NAME} reading loadout from file {:?}", file.to_string_lossy());
+            debugln!(
+                "{NAME} reading loadout from file {:?}",
+                file.to_string_lossy()
+            );
 
             self.loadout = match file.try_exists() {
                 Err(error) => return Err(error.into()),
@@ -109,20 +127,30 @@ impl LoadoutData {
 
         let generic_lights_switch = generic_lights_switch.as_vec();
 
-        let autothrottle = generic_lights_switch.get(AUTOTHROTTLE).copied().unwrap_or_default();
-        let autobrake = generic_lights_switch.get(AUTOBRAKE).copied().unwrap_or_default();
-        let hf_antenna = generic_lights_switch.get(HF_ANTENNA).copied().unwrap_or_default();
-        let navigation = generic_lights_switch.get(NAVIGATION).copied().unwrap_or_default();
+        let autothrottle = generic_lights_switch
+            .get(AUTOTHROTTLE)
+            .copied()
+            .unwrap_or_default();
+        let autobrake = generic_lights_switch
+            .get(AUTOBRAKE)
+            .copied()
+            .unwrap_or_default();
+        let hf_antenna = generic_lights_switch
+            .get(HF_ANTENNA)
+            .copied()
+            .unwrap_or_default();
+        let navigation = generic_lights_switch
+            .get(NAVIGATION)
+            .copied()
+            .unwrap_or_default();
 
-        self.loadout = Some(
-            Loadout {
-                m_fuel: m_fuel.as_vec(),
-                autobrake,
-                autothrottle,
-                hf_antenna,
-                navigation,
-            }
-        );
+        self.loadout = Some(Loadout {
+            m_fuel: m_fuel.as_vec(),
+            autobrake,
+            autothrottle,
+            hf_antenna,
+            navigation,
+        });
 
         Ok(self)
     }
@@ -131,26 +159,23 @@ impl LoadoutData {
         if let Some(loadout) = self.loadout.as_ref() {
             // Write fuel levels into sim...
             let mut m_fuel: DataRef<[f32], ReadWrite> =
-                DataRef::find("sim/flightmodel/weight/m_fuel")?
-                    .writeable()?;
+                DataRef::find("sim/flightmodel/weight/m_fuel")?.writeable()?;
             m_fuel.set(loadout.m_fuel.as_slice());
 
             // Write equipment config into sim...
             let mut generic_lights_switch: DataRef<[f32], ReadWrite> =
-                DataRef::find("sim/cockpit2/switches/generic_lights_switch")?
-                    .writeable()?;
+                DataRef::find("sim/cockpit2/switches/generic_lights_switch")?.writeable()?;
 
-            let new_generic_lights_switch: Vec<f32> = generic_lights_switch.as_vec()
+            let new_generic_lights_switch: Vec<f32> = generic_lights_switch
+                .as_vec()
                 .into_iter()
                 .enumerate()
-                .map(|(idx, value)| {
-                    match idx {
-                        AUTOTHROTTLE => loadout.autothrottle,
-                        AUTOBRAKE => loadout.autobrake,
-                        HF_ANTENNA => loadout.hf_antenna,
-                        NAVIGATION => loadout.navigation,
-                        _ => value,
-                    }
+                .map(|(idx, value)| match idx {
+                    AUTOTHROTTLE => loadout.autothrottle,
+                    AUTOBRAKE => loadout.autobrake,
+                    HF_ANTENNA => loadout.hf_antenna,
+                    NAVIGATION => loadout.navigation,
+                    _ => value,
                 })
                 .collect();
 
@@ -162,9 +187,22 @@ impl LoadoutData {
 
     fn write_into_file(self) -> Result<Self, PluginError> {
         if let (Some(file), Some(loadout)) = (self.file.as_ref(), self.loadout.as_ref()) {
-            debugln!("{NAME} writing loadout into file {:?}", file.to_string_lossy());
+            // Check if path to loadout file exists, create it otherwise
+            if let Some(file_path) = file.parent() {
+                if !file_path.try_exists()? {
+                    debugln!("{NAME} creating directory for livery {:?}", file_path);
+                    // TODO:
+                    // Don't try to create the directory just yet. We need to verify it first...
+                    std::fs::create_dir_all(file_path)?;
+                }
+            };
+
+            debugln!(
+                "{NAME} writing loadout into file {:?}",
+                file.to_string_lossy()
+            );
             let json_data = serde_json::to_string_pretty(loadout)?;
-            let mut file = File::create(file.as_os_str())?;
+            let mut file = File::create(file.as_path())?;
             file.write_all(json_data.as_bytes())?;
         } else {
             return Err(PluginError::MissingPath);
