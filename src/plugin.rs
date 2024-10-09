@@ -137,19 +137,22 @@ impl AircraftModel {
     }
 
     /// Return path to aircraft's acf file
-    /// The path is relative to X-Plane root
+    /// The path is relative to the X-Plane root directory
     pub fn relative_out_path(&self) -> PathBuf {
-        // Turn `out_path` into a relative path starting with the `Aircraft` directory
-        let mut relative = false;
+        let mut is_relative = false;
 
+        // Iterate through the full path until we get the `Aircraft` folder and then start
+        // returning everything.
+        // This way we should get a path relative to X-Plane's root directory.
+        // Maybe this could be a use case for XPLMGetSystemPath...
         let mut out_path: PathBuf = self
             .out_path
             .iter()
             .filter(|&segment| {
                 if segment == "Aircraft" {
-                    relative = true;
+                    is_relative = true;
                 }
-                relative
+                is_relative
             })
             .collect();
 
