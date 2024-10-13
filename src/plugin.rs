@@ -13,7 +13,7 @@ use xplm::flight_loop::FlightLoop;
 use xplm::plugin::{Plugin, PluginInfo};
 
 use crate::flight_loop::FlightLoopHandler;
-use crate::loadout::LoadoutData;
+use crate::loadout::LoadoutFile;
 
 pub static NAME: &str = concat!("Persistent Loadout v", env!("CARGO_PKG_VERSION"));
 static SIGNATURE: &str = concat!("com.x-plane.xplm.", env!("CARGO_PKG_NAME"));
@@ -90,7 +90,7 @@ impl Plugin for PersistentLoadoutPlugin {
     fn disable(&mut self) {
         // When the plugin gets disabled (aka the sim shuts down or the user selects another
         // aircraft) we save the current loadout...
-        if let Err(error) = LoadoutData::save_loadout() {
+        if let Err(error) = LoadoutFile::save_loadout() {
             debugln!("something went wrong: {error}");
         }
 
