@@ -18,10 +18,15 @@ use crate::loadout::LoadoutData;
 pub static NAME: &str = concat!("Persistent Loadout v", env!("CARGO_PKG_VERSION"));
 static SIGNATURE: &str = concat!("com.x-plane.xplm.", env!("CARGO_PKG_NAME"));
 static DESCRIPTION: &str = "Persistent Loadout for Shenshee's B720";
+
+// Build output path from these components
+pub static XPLANE_OUTPUT_PATH: &str = "Output";
+pub static PLUGIN_OUTPUT_PATH: &str = "B720";
 pub static LOADOUT_FILENAME: &str = "persistent-loadout.json";
 
 #[derive(Error, Debug)]
 pub enum PluginError {
+    // Capture other errors...
     #[error(transparent)]
     InputOutput(#[from] std::io::Error),
     #[error(transparent)]
@@ -32,7 +37,9 @@ pub enum PluginError {
     JsonError(#[from] serde_json::Error),
     #[error(transparent)]
     FindError(#[from] xplm::data::borrowed::FindError),
-    #[error("{NAME} aircraft with ICAO code {0:?} not supported")]
+
+    // Add our own errors...
+    #[error("{NAME} aircraft {0:?} not supported")]
     AircraftNotSupported(String),
     #[error("{NAME} no path to {:?}", LOADOUT_FILENAME)]
     MissingPath,
@@ -131,11 +138,13 @@ impl AircraftModel {
         Ok(Self { out_file, out_path })
     }
 
+    #[allow(dead_code)]
     /// Return aircraft's acf file name without .acf extension
     pub fn out_file_stem(&self) -> OsString {
         self.out_file.file_stem().unwrap_or_default().to_owned()
     }
 
+    #[allow(dead_code)]
     /// Return path to aircraft's acf file
     /// The path is relative to the X-Plane root directory
     pub fn relative_out_path(&self) -> PathBuf {
