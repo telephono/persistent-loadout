@@ -11,7 +11,7 @@ use xplm::data::borrowed::DataRef;
 use xplm::data::{ArrayRead, ArrayReadWrite, ReadWrite, StringRead};
 
 use crate::plugin::{AircraftModel, PluginError};
-use crate::plugin::{LOADOUT_FILENAME, NAME};
+use crate::plugin::{LOADOUT_FILENAME, NAME, OUTPUT_PATH};
 
 // Light switch indices for different equipment configururations
 const AUTOTHROTTLE: usize = 49;
@@ -56,27 +56,38 @@ impl LoadoutData {
         let acf_livery_path: DataRef<[u8]> = DataRef::find("sim/aircraft/view/acf_livery_path")?;
         let acf_livery_path = acf_livery_path.get_as_string()?;
 
-        // Set up a valid livery path for default livery (empty `acf_livery_path`)
-        let mut file_path: PathBuf;
+        let mut output_file_path = PathBuf::from(OUTPUT_PATH);
 
-        if acf_livery_path.is_empty() {
-            // Build livery path from based on aircraft path
-            let aircraft_model = AircraftModel::new(0)?;
-            file_path = PathBuf::new();
-            file_path.push(aircraft_model.relative_out_path());
-            file_path.push("liveries");
-            file_path.push(format!(
-                "Default {}",
-                aircraft_model.out_file_stem().to_string_lossy()
-            ));
-        } else {
-            file_path = PathBuf::from(acf_livery_path.as_str());
+        // Build path from aircraft model
+        let aircraft_model = AircraftModel::new(0)?;
+        match aircraft_model.out_file_stem().to_string_lossy().as_ref() {
+            "Boeing_720" => output_file_path.push("720"),
+            "Boeing_720B" => output_file_path.push("720B"),
+            _ => {
+                debugln!("{NAME} failed to get known aircraft model from {:?}", aircraft_model);
+                let aircraft = aircraft_model.out_file_stem().to_string_lossy().to_string();
+                return Err(PluginError::AircraftNotSupported(aircraft));
+            }
         }
 
-        file_path.push(LOADOUT_FILENAME);
+        if acf_livery_path.is_empty() {
+            // Set up a valid livery path for default livery.
+            output_file_path.push("Default");
+        } else {
+            // Set up a valid livery path.
+            let acf_livery_path = PathBuf::from(acf_livery_path.as_str());
+            if let Some(livery_path) = acf_livery_path.components().last() {
+                output_file_path.push(livery_path)
+            } else {
+                debugln!("{NAME} failed to extract livery folder from {:?}", acf_livery_path);
+                return Err(PluginError::MissingPath);
+            };
+        }
+
+        output_file_path.push(LOADOUT_FILENAME);
 
         Ok(Self {
-            file: Some(file_path),
+            file: Some(output_file_path),
             loadout: None,
         })
     }

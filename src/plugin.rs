@@ -18,6 +18,7 @@ use crate::loadout::LoadoutData;
 pub static NAME: &str = concat!("Persistent Loadout v", env!("CARGO_PKG_VERSION"));
 static SIGNATURE: &str = concat!("com.x-plane.xplm.", env!("CARGO_PKG_NAME"));
 static DESCRIPTION: &str = "Persistent Loadout for Shenshee's B720";
+pub static OUTPUT_PATH: &str = "Output/B720";
 pub static LOADOUT_FILENAME: &str = "persistent-loadout.json";
 
 #[derive(Error, Debug)]
@@ -32,7 +33,7 @@ pub enum PluginError {
     JsonError(#[from] serde_json::Error),
     #[error(transparent)]
     FindError(#[from] xplm::data::borrowed::FindError),
-    #[error("{NAME} aircraft with ICAO code {0:?} not supported")]
+    #[error("{NAME} aircraft {0:?} not supported")]
     AircraftNotSupported(String),
     #[error("{NAME} no path to {:?}", LOADOUT_FILENAME)]
     MissingPath,
