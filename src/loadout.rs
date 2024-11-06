@@ -11,7 +11,7 @@ use xplm::data::borrowed::DataRef;
 use xplm::data::{ArrayRead, ArrayReadWrite, ReadWrite, StringRead};
 
 use crate::plugin::{AircraftModel, PluginError};
-use crate::plugin::{LOADOUT_FILENAME, NAME, OUTPUT_PATH};
+use crate::plugin::{LOADOUT_FILENAME, NAME, PLUGIN_OUTPUT_PATH, XPLANE_OUTPUT_PATH};
 
 // Light switch indices for different equipment configururations
 const AUTOTHROTTLE: usize = 49;
@@ -56,8 +56,8 @@ impl LoadoutData {
         let acf_livery_path: DataRef<[u8]> = DataRef::find("sim/aircraft/view/acf_livery_path")?;
         let acf_livery_path = acf_livery_path.get_as_string()?;
 
-        let mut output_file_path = PathBuf::from(OUTPUT_PATH);
-        output_file_path.push("B720");
+        let mut output_file_path = PathBuf::from(XPLANE_OUTPUT_PATH);
+        output_file_path.push(PLUGIN_OUTPUT_PATH);
 
         // Build path from aircraft model
         let aircraft_model = AircraftModel::new(0)?;
@@ -65,7 +65,10 @@ impl LoadoutData {
             "Boeing_720" => output_file_path.push("720"),
             "Boeing_720B" => output_file_path.push("720B"),
             _ => {
-                debugln!("{NAME} failed to get known aircraft model from {:?}", aircraft_model);
+                debugln!(
+                    "{NAME} failed to get known aircraft model from {:?}",
+                    aircraft_model
+                );
                 let aircraft = aircraft_model.out_file_stem().to_string_lossy().to_string();
                 return Err(PluginError::AircraftNotSupported(aircraft));
             }
@@ -80,7 +83,10 @@ impl LoadoutData {
             if let Some(livery_path) = acf_livery_path.components().last() {
                 output_file_path.push(livery_path)
             } else {
-                debugln!("{NAME} failed to extract livery folder from {:?}", acf_livery_path);
+                debugln!(
+                    "{NAME} failed to extract livery folder from {:?}",
+                    acf_livery_path
+                );
                 return Err(PluginError::MissingPath);
             };
         }
