@@ -132,11 +132,13 @@ impl AircraftModel {
         Ok(Self { out_file, out_path })
     }
 
+    #[allow(dead_code)]
     /// Return aircraft's acf file name without .acf extension
     pub fn out_file_stem(&self) -> OsString {
         self.out_file.file_stem().unwrap_or_default().to_owned()
     }
 
+    #[allow(dead_code)]
     /// Return path to aircraft's acf file
     /// The path is relative to X-Plane root
     pub fn relative_out_path(&self) -> PathBuf {
