@@ -57,6 +57,7 @@ impl LoadoutData {
         let acf_livery_path = acf_livery_path.get_as_string()?;
 
         let mut output_file_path = PathBuf::from(OUTPUT_PATH);
+        output_file_path.push("B720");
 
         // Build path from aircraft model
         let aircraft_model = AircraftModel::new(0)?;

@@ -18,7 +18,7 @@ use crate::loadout::LoadoutData;
 pub static NAME: &str = concat!("Persistent Loadout v", env!("CARGO_PKG_VERSION"));
 static SIGNATURE: &str = concat!("com.x-plane.xplm.", env!("CARGO_PKG_NAME"));
 static DESCRIPTION: &str = "Persistent Loadout for Shenshee's B720";
-pub static OUTPUT_PATH: &str = "Output/B720";
+pub static OUTPUT_PATH: &str = "Output";
 pub static LOADOUT_FILENAME: &str = "persistent-loadout.json";
 
 #[derive(Error, Debug)]
