@@ -18,9 +18,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Cross
-        run: cargo install cross
-
       - name: Build
         run: make build/linux
 
