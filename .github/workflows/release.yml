@@ -28,7 +28,7 @@ jobs:
         with:
           name: build-cross
           path: |
-            persisten-loadout
+            persistent-loadout
 
   build-mac:
     runs-on: macos-latest
@@ -48,7 +48,7 @@ jobs:
         with:
           name: build-mac
           path: |
-            persisten-loadout
+            persistent-loadout
 
   release:
     runs-on: ubuntu-latest
