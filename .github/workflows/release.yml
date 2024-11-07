@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 jobs:
-  build-cross:
+  build-lin:
     runs-on: ubuntu-latest
 
     steps:
@@ -22,11 +22,11 @@ jobs:
         run: cargo install cross
 
       - name: Build
-        run: make build/cross
+        run: make build/linux
 
       - uses: actions/upload-artifact@v4
         with:
-          name: build-cross
+          name: build-lin
           path: |
             persistent-loadout
 
@@ -50,10 +50,28 @@ jobs:
           path: |
             persistent-loadout
 
+  build-win:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Cross
+        run: cargo install cross
+
+      - name: Build
+        run: make build/windows
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-win
+          path: |
+            persistent-loadout
+
   release:
     runs-on: ubuntu-latest
 
-    needs: [ build-cross, build-mac ]
+    needs: [ build-lin, build-mac, build-win ]
 
     steps:
       - uses: actions/download-artifact@v4
@@ -62,14 +80,14 @@ jobs:
           pattern: build-*
           merge-multiple: 'true'
 
-      - run: ls -R
-
       - name: Create ZIP archive
         env:
           ref_name: ${{ github.ref_name }}
         run: zip -r persistent-loadout-${ref_name}.zip persistent-loadout/
 
-#      - uses: softprops/action-gh-release@v2
-#        with:
-#          draft: true
-#          files: persistent-loadout-*.zip
+      - uses: softprops/action-gh-release@v2
+        env:
+          ref_name: ${{ github.ref_name }}
+        with:
+          draft: true
+          files: persistent-loadout-${ref_name}.zip
