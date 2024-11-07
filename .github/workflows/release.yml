@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+#    tags:
+#      - 'v*.*.*'
 
 env:
   CARGO_TERM_COLOR: always
@@ -12,8 +12,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
-
+  build-cross:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,15 +22,48 @@ jobs:
         run: cargo install cross
 
       - name: Build
-        run: make build/all
+        run: make build/cross
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-cross
+          path: |
+            persisten-loadout
+
+  build-mac:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: make build/mac
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-mac
+          path: |
+            persisten-loadout
+
+  release:
+    runs-on: ubuntu-latest
+
+    needs: [ build-cross, build-mac ]
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: build-*
+          merge-multiple: 'true'
+
+      - run: ls -R
 
       - name: Create ZIP archive
         env:
           ref_name: ${{ github.ref_name }}
         run: zip -r persistent-loadout-${ref_name}.zip persistent-loadout/
 
-      - name: Release
-        uses: softprops/action-gh-release@v2
-        with:
-          draft: true
-          files: persistent-loadout-*.zip
+#      - uses: softprops/action-gh-release@v2
+#        with:
+#          draft: true
+#          files: persistent-loadout-*.zip
