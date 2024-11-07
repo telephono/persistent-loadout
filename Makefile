@@ -22,4 +22,4 @@ build/windows:
 	cp target/x86_64-pc-windows-gnu/release/persistent_loadout.dll persistent-loadout/win_x64/persistent-loadout.xpl
 
 .PHONY: build/cross
-build/all: clean build/windows build/linux
+build/cross: clean build/windows build/linux
