@@ -32,27 +32,27 @@ struct Loadout {
     navigation: f32,
 }
 
-pub struct LoadoutData {
+pub struct LoadoutFile {
     file: Option<PathBuf>,
     loadout: Option<Loadout>,
 }
 
-impl LoadoutData {
+impl LoadoutFile {
     /// Read loadout from sim and write it into a JSON file.
     pub fn save_loadout() -> Result<(), PluginError> {
-        Self::new()?.loadout_from_sim()?.write_into_file()?;
+        Self::initialize()?.loadout_from_sim()?.write_into_file()?;
 
         Ok(())
     }
 
     /// Read loadout from JSON file and write it into sim.
     pub fn restore_loadout() -> Result<(), PluginError> {
-        Self::new()?.loadout_from_file()?.write_into_sim()?;
+        Self::initialize()?.loadout_from_file()?.write_into_sim()?;
 
         Ok(())
     }
 
-    fn new() -> Result<Self, PluginError> {
+    fn initialize() -> Result<Self, PluginError> {
         let acf_livery_path: DataRef<[u8]> = DataRef::find("sim/aircraft/view/acf_livery_path")?;
         let acf_livery_path = acf_livery_path.get_as_string()?;
 
