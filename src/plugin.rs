@@ -105,6 +105,19 @@ impl Plugin for PersistentLoadoutPlugin {
             description: String::from(DESCRIPTION),
         }
     }
+
+    fn receive_message(
+        &mut self,
+        _from: std::os::raw::c_int,
+        message: std::os::raw::c_int,
+        param: *mut std::os::raw::c_void,
+    ) {
+        let message = message as u32;
+        if message == xplm_sys::XPLM_MSG_LIVERY_LOADED {
+            let index = param as usize;
+            debugln!("{NAME} XPLM_MSG_LIVERY_LOADED for aircraft idx {index}");
+        }
+    }
 }
 
 /// XPLMGetNthAircraftModel wrapper

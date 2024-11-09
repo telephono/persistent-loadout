@@ -35,6 +35,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "bindgen"
+version = "0.70.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f49d8fed880d473ea71efb9bf597651e77201bdd4893efe54c9e5d65ae04ce6f"
+dependencies = [
+ "bitflags",
+ "cexpr",
+ "clang-sys",
+ "itertools",
+ "log",
+ "prettyplease",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "rustc-hash",
+ "shlex",
+ "syn",
+]
+
+[[package]]
 name = "bitflags"
 version = "2.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -189,9 +209,9 @@ version = "0.4.0"
 dependencies = [
  "serde",
  "serde_json",
- "thiserror 2.0.0",
+ "thiserror 2.0.1",
  "xplm",
- "xplm-sys",
+ "xplm-sys 0.5.0 (git+https://github.com/telephono/xplm-sys.git?branch=update-sdk-411)",
 ]
 
 [[package]]
@@ -342,11 +362,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "2.0.0"
+version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15291287e9bff1bc6f9ff3409ed9af665bec7a5fc8ac079ea96be07bca0e2668"
+checksum = "07c1e40dd48a282ae8edc36c732cbc219144b87fb6a4c7316d611c6b1f06ec0c"
 dependencies = [
- "thiserror-impl 2.0.0",
+ "thiserror-impl 2.0.1",
 ]
 
 [[package]]
@@ -362,9 +382,9 @@ dependencies = [
 
 [[package]]
 name = "thiserror-impl"
-version = "2.0.0"
+version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22efd00f33f93fa62848a7cab956c3d38c8d43095efda1decfc2b3a5dc0b8972"
+checksum = "874aa7e446f1da8d9c3a5c95b1c5eb41d800045252121dc7f8e0ba370cee55f5"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -465,11 +485,10 @@ checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
 [[package]]
 name = "xplm"
 version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6bd0469d041f0cc336cd9f5235f2681a0babd8ecfb091ce922e03a39e57250a2"
+source = "git+https://github.com/telephono/rust-xplm.git?branch=xplugin-receive-message#0b205b322c98ef03b0bada1eff03eb86e0edae8c"
 dependencies = [
  "thiserror 1.0.64",
- "xplm-sys",
+ "xplm-sys 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -478,5 +497,13 @@ version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e51ad08805a2f5e22793bb0e36849227502c17002a488027742ed8b0be26569e"
 dependencies = [
- "bindgen",
+ "bindgen 0.69.4",
+]
+
+[[package]]
+name = "xplm-sys"
+version = "0.5.0"
+source = "git+https://github.com/telephono/xplm-sys.git?branch=update-sdk-411#2da93d40b3e8368a0adebae5b1fa60c474963701"
+dependencies = [
+ "bindgen 0.70.1",
 ]
