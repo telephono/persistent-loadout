@@ -106,8 +106,7 @@ impl Plugin for PersistentLoadoutPlugin {
         }
     }
 
-    fn receive_message(&mut self, _from: c_int, message: c_int, param: *mut c_void) {
-        let message = message as u32;
+    fn receive_message(&mut self, _from: i32, message: u32, param: *mut c_void) {
         match message {
             xplm_sys::XPLM_MSG_PLANE_LOADED => {
                 let index = param as usize;
