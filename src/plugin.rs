@@ -1,8 +1,9 @@
 // Copyright (c) 2024 telephono
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
-use std::ffi::{c_char, c_int, CStr, OsString};
+use std::ffi::{CStr, OsString};
 use std::fmt::Display;
+use std::os::raw::{c_char, c_int, c_void};
 use std::path::PathBuf;
 
 use thiserror::Error;
@@ -13,7 +14,6 @@ use xplm::flight_loop::FlightLoop;
 use xplm::plugin::{Plugin, PluginInfo};
 
 use crate::flight_loop::FlightLoopHandler;
-use crate::loadout::LoadoutFile;
 
 pub static NAME: &str = concat!("Persistent Loadout v", env!("CARGO_PKG_VERSION"));
 static SIGNATURE: &str = concat!("com.x-plane.xplm.", env!("CARGO_PKG_NAME"));
@@ -81,8 +81,8 @@ impl Plugin for PersistentLoadoutPlugin {
 
         // After enabling our plugin, we need to wait for the flight loop to start,
         // so our datarefs are ready and accessible.
-        debugln!("{NAME} enabling flight loop callback");
-        self.handler.schedule_after_loops(60);
+        // debugln!("{NAME} enabling flight loop callback");
+        // self.handler.schedule_after_loops(60);
 
         Ok(())
     }
@@ -90,9 +90,9 @@ impl Plugin for PersistentLoadoutPlugin {
     fn disable(&mut self) {
         // When the plugin gets disabled (aka the sim shuts down or the user selects another
         // aircraft) we save the current loadout...
-        if let Err(error) = LoadoutFile::save_loadout() {
-            debugln!("something went wrong: {error}");
-        }
+        // if let Err(error) = LoadoutFile::save_loadout() {
+        //     debugln!("something went wrong: {error}");
+        // }
 
         debugln!("{NAME} disabling");
         self.handler.deactivate();
@@ -106,16 +106,28 @@ impl Plugin for PersistentLoadoutPlugin {
         }
     }
 
-    fn receive_message(
-        &mut self,
-        _from: std::os::raw::c_int,
-        message: std::os::raw::c_int,
-        param: *mut std::os::raw::c_void,
-    ) {
+    fn receive_message(&mut self, _from: c_int, message: c_int, param: *mut c_void) {
         let message = message as u32;
-        if message == xplm_sys::XPLM_MSG_LIVERY_LOADED {
-            let index = param as usize;
-            debugln!("{NAME} XPLM_MSG_LIVERY_LOADED for aircraft idx {index}");
+        match message {
+            xplm_sys::XPLM_MSG_PLANE_LOADED => {
+                let index = param as usize;
+                if index == 0 {
+                    debugln!("{NAME} XPLM_MSG_PLANE_LOADED");
+                }
+            }
+            xplm_sys::XPLM_MSG_LIVERY_LOADED => {
+                let index = param as usize;
+                if index == 0 {
+                    debugln!("{NAME} XPLM_MSG_LIVERY_LOADED");
+                }
+            }
+            xplm_sys::XPLM_MSG_PLANE_UNLOADED => {
+                let index = param as usize;
+                if index == 0 {
+                    debugln!("{NAME} XPLM_MSG_PLANE_UNLOADED");
+                }
+            }
+            _ => {}
         }
     }
 }
