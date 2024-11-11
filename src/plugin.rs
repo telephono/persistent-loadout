@@ -134,13 +134,15 @@ impl Plugin for PersistentLoadoutPlugin {
             debugln!("{NAME} XPLM_MSG_LIVERY_LOADED");
 
             GLOBAL_LIVERY.with(|path| {
+                let old_livery = (*path.borrow()).clone();
+
                 // Ignore on first run...
-                if (*path.borrow()).as_os_str().is_empty() {
+                if old_livery.as_os_str().is_empty() {
                     return;
                 }
 
                 // Get new livery path
-                let livery_path = match get_acf_livery_path() {
+                let new_livery = match get_acf_livery_path() {
                     Ok(path) => path,
                     Err(error) => {
                         debugln!("{NAME} something went wrong: {error}");
@@ -149,23 +151,14 @@ impl Plugin for PersistentLoadoutPlugin {
                 };
 
                 // Compare old and new livery path
-                if (*path.borrow()).as_os_str() == livery_path.as_os_str() {
+                // Nothing to do if they are the same...
+                if old_livery.as_os_str() == new_livery.as_os_str() {
                     return;
                 }
 
-                debugln!("{NAME} old livery: {:?}", (*path.borrow()).as_os_str());
-                debugln!("{NAME} new livery: {:?}", livery_path.as_os_str());
+                debugln!("{NAME} livery change detected");
 
-                let old_loadout =
-                    match LoadoutFile::from_custom_livery((*path.borrow()).as_os_str()) {
-                        Ok(loadout) => loadout,
-                        Err(error) => {
-                            debugln!("{NAME} something went wrong: {error}");
-                            return;
-                        }
-                    };
-
-                let new_loadout = match LoadoutFile::from_custom_livery(livery_path.as_os_str()) {
+                let old_loadout = match LoadoutFile::from_custom_livery(old_livery.as_os_str()) {
                     Ok(loadout) => loadout,
                     Err(error) => {
                         debugln!("{NAME} something went wrong: {error}");
@@ -173,8 +166,36 @@ impl Plugin for PersistentLoadoutPlugin {
                     }
                 };
 
-                debugln!("{NAME} old loadout: {:?}", old_loadout);
-                debugln!("{NAME} new loadout: {:?}", new_loadout);
+                debugln!(
+                    "{NAME} saving loadout for old livery {}",
+                    old_livery.as_path().display()
+                );
+
+                if let Err(error) = old_loadout.save_loadout() {
+                    debugln!("{NAME} something went wrong: {error}");
+                    return;
+                }
+
+                let new_loadout = match LoadoutFile::from_custom_livery(new_livery.as_os_str()) {
+                    Ok(loadout) => loadout,
+                    Err(error) => {
+                        debugln!("{NAME} something went wrong: {error}");
+                        return;
+                    }
+                };
+
+                debugln!(
+                    "{NAME} restoring loadout for new livery {}",
+                    new_livery.as_path().display()
+                );
+
+                if let Err(error) = new_loadout.restore_loadout() {
+                    debugln!("{NAME} something went wrong: {error}");
+                    return;
+                };
+
+                // Update "old"" livery
+                *path.borrow_mut() = new_livery;
             });
         }
     }
