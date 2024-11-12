@@ -169,11 +169,6 @@ impl Plugin for PersistentLoadoutPlugin {
                         }
                     };
 
-                debugln!(
-                    "{NAME} saving loadout for old livery {}...",
-                    old_livery_path.to_string_lossy()
-                );
-
                 if let Err(error) = old_loadout.save_loadout() {
                     debugln!("{NAME} something went wrong: {error}");
                     return;
@@ -188,11 +183,6 @@ impl Plugin for PersistentLoadoutPlugin {
                             return;
                         }
                     };
-
-                debugln!(
-                    "{NAME} restoring loadout for new livery {}...",
-                    new_livery_path.to_string_lossy()
-                );
 
                 if let Err(error) = new_loadout.restore_loadout() {
                     debugln!("{NAME} something went wrong: {error}");
