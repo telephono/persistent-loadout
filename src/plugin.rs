@@ -3,7 +3,6 @@
 
 use std::cell::RefCell;
 use std::ffi::{CStr, OsString};
-use std::fmt::Display;
 use std::os::raw::{c_char, c_int, c_void};
 use std::path::PathBuf;
 
@@ -96,7 +95,7 @@ impl Plugin for PersistentLoadoutPlugin {
     fn disable(&mut self) {
         // When the plugin gets disabled (aka the sim shuts down or the user selects another
         // aircraft) we save the current loadout...
-        let loadout = match LoadoutFile::new().with_acf_livery_path() {
+        let loadout = match LoadoutFile::with_acf_livery_path() {
             Ok(loadout) => loadout,
             Err(error) => {
                 debugln!("{NAME} something went wrong: {error}");
@@ -106,7 +105,7 @@ impl Plugin for PersistentLoadoutPlugin {
         };
 
         if let Err(error) = loadout.save_loadout() {
-            debugln!("something went wrong: {error}");
+            debugln!("{NAME} something went wrong: {error}");
             self.handler.deactivate();
             return;
         }
@@ -131,8 +130,6 @@ impl Plugin for PersistentLoadoutPlugin {
                 return;
             }
 
-            debugln!("{NAME} XPLM_MSG_LIVERY_LOADED");
-
             GLOBAL_LIVERY.with(|path| {
                 let old_livery_path = (*path.borrow()).clone();
 
@@ -153,21 +150,17 @@ impl Plugin for PersistentLoadoutPlugin {
                 // Compare old and new livery path
                 // Nothing to do if they are the same...
                 if old_livery_path.as_os_str() == new_livery_path.as_os_str() {
-                    debugln!("{NAME} livery did not change");
                     return;
                 }
 
-                debugln!("{NAME} livery change detected");
-
                 // Save loadout for old livery...
-                let old_loadout =
-                    match LoadoutFile::new().with_livery_path(old_livery_path.as_os_str()) {
-                        Ok(loadout) => loadout,
-                        Err(error) => {
-                            debugln!("{NAME} something went wrong: {error}");
-                            return;
-                        }
-                    };
+                let old_loadout = match LoadoutFile::with_livery_path(old_livery_path.as_os_str()) {
+                    Ok(loadout) => loadout,
+                    Err(error) => {
+                        debugln!("{NAME} something went wrong: {error}");
+                        return;
+                    }
+                };
 
                 if let Err(error) = old_loadout.save_loadout() {
                     debugln!("{NAME} something went wrong: {error}");
@@ -175,14 +168,13 @@ impl Plugin for PersistentLoadoutPlugin {
                 }
 
                 // Restore loadout for new livery...
-                let new_loadout =
-                    match LoadoutFile::new().with_livery_path(new_livery_path.as_os_str()) {
-                        Ok(loadout) => loadout,
-                        Err(error) => {
-                            debugln!("{NAME} something went wrong: {error}");
-                            return;
-                        }
-                    };
+                let new_loadout = match LoadoutFile::with_livery_path(new_livery_path.as_os_str()) {
+                    Ok(loadout) => loadout,
+                    Err(error) => {
+                        debugln!("{NAME} something went wrong: {error}");
+                        return;
+                    }
+                };
 
                 if let Err(error) = new_loadout.restore_loadout() {
                     debugln!("{NAME} something went wrong: {error}");
@@ -258,12 +250,5 @@ impl AircraftModel {
         out_path.pop();
 
         out_path
-    }
-}
-
-impl Display for AircraftModel {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let out_path_file = self.out_path.join(self.out_file.as_path());
-        write!(f, "{}", out_path_file.to_string_lossy())
     }
 }

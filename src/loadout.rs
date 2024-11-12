@@ -40,16 +40,8 @@ pub struct LoadoutFile {
 }
 
 impl LoadoutFile {
-    /// Allocates an empty `LoadoutFile`.
-    pub fn new() -> Self {
-        Self {
-            file: None,
-            loadout: None,
-        }
-    }
-
     /// Set output file path from aircraft livery path
-    pub fn with_acf_livery_path(self) -> Result<Self, PluginError> {
+    pub fn with_acf_livery_path() -> Result<Self, PluginError> {
         let mut output_file_path = match Self::acf_livery_path() {
             Ok(path) => path,
             Err(error) => return Err(error),
@@ -62,18 +54,18 @@ impl LoadoutFile {
 
         Ok(Self {
             file: Some(output_file_path),
-            ..self
+            loadout: None,
         })
     }
 
     /// Set output file path from given livery path
-    pub fn with_livery_path(self, livery_path: &OsStr) -> Result<Self, PluginError> {
+    pub fn with_livery_path(livery_path: &OsStr) -> Result<Self, PluginError> {
         let mut output_file_path = PathBuf::from(livery_path);
         output_file_path.push(LOADOUT_FILENAME);
 
         Ok(Self {
             file: Some(output_file_path),
-            ..self
+            loadout: None,
         })
     }
 
