@@ -96,7 +96,7 @@ impl Plugin for PersistentLoadoutPlugin {
     fn disable(&mut self) {
         // When the plugin gets disabled (aka the sim shuts down or the user selects another
         // aircraft) we save the current loadout...
-        let loadout = match LoadoutFile::from_current_livery() {
+        let loadout = match LoadoutFile::new().with_acf_livery_path() {
             Ok(loadout) => loadout,
             Err(error) => {
                 debugln!("{NAME} something went wrong: {error}");
@@ -125,8 +125,8 @@ impl Plugin for PersistentLoadoutPlugin {
 
     fn receive_message(&mut self, _from: i32, message: u32, param: *mut c_void) {
         if message == xplm_sys::XPLM_MSG_LIVERY_LOADED {
-            // We are only interested in our own livery
-            let index = param as usize;
+            // We are only interested in our own aircraft (index = 0)
+            let index = param as i32;
             if index != 0 {
                 return;
             }
@@ -134,15 +134,15 @@ impl Plugin for PersistentLoadoutPlugin {
             debugln!("{NAME} XPLM_MSG_LIVERY_LOADED");
 
             GLOBAL_LIVERY.with(|path| {
-                let old_livery = (*path.borrow()).clone();
+                let old_livery_path = (*path.borrow()).clone();
 
                 // Ignore on first run...
-                if old_livery.as_os_str().is_empty() {
+                if old_livery_path.as_os_str().is_empty() {
                     return;
                 }
 
                 // Get new livery path
-                let new_livery = match get_acf_livery_path() {
+                let new_livery_path = match LoadoutFile::acf_livery_path() {
                     Ok(path) => path,
                     Err(error) => {
                         debugln!("{NAME} something went wrong: {error}");
@@ -152,23 +152,26 @@ impl Plugin for PersistentLoadoutPlugin {
 
                 // Compare old and new livery path
                 // Nothing to do if they are the same...
-                if old_livery.as_os_str() == new_livery.as_os_str() {
+                if old_livery_path.as_os_str() == new_livery_path.as_os_str() {
+                    debugln!("{NAME} livery did not change");
                     return;
                 }
 
                 debugln!("{NAME} livery change detected");
 
-                let old_loadout = match LoadoutFile::from_custom_livery(old_livery.as_os_str()) {
-                    Ok(loadout) => loadout,
-                    Err(error) => {
-                        debugln!("{NAME} something went wrong: {error}");
-                        return;
-                    }
-                };
+                // Save loadout for old livery...
+                let old_loadout =
+                    match LoadoutFile::new().with_livery_path(old_livery_path.as_os_str()) {
+                        Ok(loadout) => loadout,
+                        Err(error) => {
+                            debugln!("{NAME} something went wrong: {error}");
+                            return;
+                        }
+                    };
 
                 debugln!(
-                    "{NAME} saving loadout for old livery {}",
-                    old_livery.as_path().display()
+                    "{NAME} saving loadout for old livery {}...",
+                    old_livery_path.to_string_lossy()
                 );
 
                 if let Err(error) = old_loadout.save_loadout() {
@@ -176,17 +179,19 @@ impl Plugin for PersistentLoadoutPlugin {
                     return;
                 }
 
-                let new_loadout = match LoadoutFile::from_custom_livery(new_livery.as_os_str()) {
-                    Ok(loadout) => loadout,
-                    Err(error) => {
-                        debugln!("{NAME} something went wrong: {error}");
-                        return;
-                    }
-                };
+                // Restore loadout for new livery...
+                let new_loadout =
+                    match LoadoutFile::new().with_livery_path(new_livery_path.as_os_str()) {
+                        Ok(loadout) => loadout,
+                        Err(error) => {
+                            debugln!("{NAME} something went wrong: {error}");
+                            return;
+                        }
+                    };
 
                 debugln!(
-                    "{NAME} restoring loadout for new livery {}",
-                    new_livery.as_path().display()
+                    "{NAME} restoring loadout for new livery {}...",
+                    new_livery_path.to_string_lossy()
                 );
 
                 if let Err(error) = new_loadout.restore_loadout() {
@@ -194,8 +199,8 @@ impl Plugin for PersistentLoadoutPlugin {
                     return;
                 };
 
-                // Update "old"" livery
-                *path.borrow_mut() = new_livery;
+                // Update "old" livery
+                *path.borrow_mut() = new_livery_path;
             });
         }
     }
@@ -271,45 +276,4 @@ impl Display for AircraftModel {
         let out_path_file = self.out_path.join(self.out_file.as_path());
         write!(f, "{}", out_path_file.to_string_lossy())
     }
-}
-
-pub fn get_acf_livery_path() -> Result<PathBuf, PluginError> {
-    let acf_livery_path: DataRef<[u8]> = DataRef::find("sim/aircraft/view/acf_livery_path")?;
-    let acf_livery_path = acf_livery_path.get_as_string()?;
-
-    let mut output_file_path = PathBuf::from(XPLANE_OUTPUT_PATH);
-    output_file_path.push(PLUGIN_OUTPUT_PATH);
-
-    // Build path from aircraft model
-    let aircraft_model = AircraftModel::new(0)?;
-    match aircraft_model.out_file_stem().to_string_lossy().as_ref() {
-        "Boeing_720" => output_file_path.push("720"),
-        "Boeing_720B" => output_file_path.push("720B"),
-        _ => {
-            debugln!(
-                "{NAME} failed to get known aircraft model from {:?}",
-                aircraft_model
-            );
-            let aircraft = aircraft_model.out_file_stem().to_string_lossy().to_string();
-            return Err(PluginError::AircraftNotSupported(aircraft));
-        }
-    }
-
-    if acf_livery_path.is_empty() {
-        // Set up a valid livery path for default livery.
-        output_file_path.push("Default");
-    } else {
-        // Set up a valid livery path.
-        let acf_livery_path = PathBuf::from(acf_livery_path.as_str());
-        if let Some(livery_path) = acf_livery_path.components().last() {
-            output_file_path.push(livery_path)
-        } else {
-            debugln!(
-                "{NAME} failed to extract livery folder from {:?}",
-                acf_livery_path
-            );
-            return Err(PluginError::MissingPath);
-        };
-    }
-    Ok(output_file_path)
 }

@@ -9,10 +9,10 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 use xplm::data::borrowed::DataRef;
-use xplm::data::{ArrayRead, ArrayReadWrite, ReadWrite};
+use xplm::data::{ArrayRead, ArrayReadWrite, ReadWrite, StringRead};
 
-use crate::plugin::{get_acf_livery_path, PluginError, GLOBAL_LIVERY};
-use crate::plugin::{LOADOUT_FILENAME, NAME};
+use crate::plugin::{AircraftModel, PluginError, GLOBAL_LIVERY};
+use crate::plugin::{LOADOUT_FILENAME, NAME, PLUGIN_OUTPUT_PATH, XPLANE_OUTPUT_PATH};
 
 // Light switch indices for different equipment configururations
 const AUTOTHROTTLE: usize = 49;
@@ -40,8 +40,17 @@ pub struct LoadoutFile {
 }
 
 impl LoadoutFile {
-    pub fn from_current_livery() -> Result<Self, PluginError> {
-        let mut output_file_path = match get_acf_livery_path() {
+    /// Allocates an empty `LoadoutFile`.
+    pub fn new() -> Self {
+        Self {
+            file: None,
+            loadout: None,
+        }
+    }
+
+    /// Set output file path from aircraft livery path
+    pub fn with_acf_livery_path(self) -> Result<Self, PluginError> {
+        let mut output_file_path = match Self::acf_livery_path() {
             Ok(path) => path,
             Err(error) => return Err(error),
         };
@@ -53,17 +62,18 @@ impl LoadoutFile {
 
         Ok(Self {
             file: Some(output_file_path),
-            loadout: None,
+            ..self
         })
     }
 
-    pub fn from_custom_livery(livery_path: &OsStr) -> Result<Self, PluginError> {
+    /// Set output file path from given livery path
+    pub fn with_livery_path(self, livery_path: &OsStr) -> Result<Self, PluginError> {
         let mut output_file_path = PathBuf::from(livery_path);
         output_file_path.push(LOADOUT_FILENAME);
 
         Ok(Self {
             file: Some(output_file_path),
-            loadout: None,
+            ..self
         })
     }
 
@@ -79,6 +89,48 @@ impl LoadoutFile {
         self.loadout_from_file()?.write_into_sim()?;
 
         Ok(())
+    }
+
+    /// Build output path from `sim/aircraft/view/acf_livery_path` dataref
+    pub fn acf_livery_path() -> Result<PathBuf, PluginError> {
+        let acf_livery_path: DataRef<[u8]> = DataRef::find("sim/aircraft/view/acf_livery_path")?;
+        let acf_livery_path = acf_livery_path.get_as_string()?;
+
+        let mut output_file_path = PathBuf::from(XPLANE_OUTPUT_PATH);
+        output_file_path.push(PLUGIN_OUTPUT_PATH);
+
+        // Build path from aircraft model
+        let aircraft_model = AircraftModel::new(0)?;
+        match aircraft_model.out_file_stem().to_string_lossy().as_ref() {
+            "Boeing_720" => output_file_path.push("720"),
+            "Boeing_720B" => output_file_path.push("720B"),
+            _ => {
+                debugln!(
+                    "{NAME} failed to get known aircraft model from {:?}",
+                    aircraft_model
+                );
+                let aircraft = aircraft_model.out_file_stem().to_string_lossy().to_string();
+                return Err(PluginError::AircraftNotSupported(aircraft));
+            }
+        }
+
+        if acf_livery_path.is_empty() {
+            // Set up a valid livery path for default livery.
+            output_file_path.push("Default");
+        } else {
+            // Set up a valid livery path.
+            let acf_livery_path = PathBuf::from(acf_livery_path.as_str());
+            if let Some(livery_path) = acf_livery_path.components().last() {
+                output_file_path.push(livery_path)
+            } else {
+                debugln!(
+                    "{NAME} failed to extract livery folder from {:?}",
+                    acf_livery_path
+                );
+                return Err(PluginError::MissingPath);
+            };
+        }
+        Ok(output_file_path)
     }
 
     /// Read the loadout from a JSON file, but only if `self.file` is set.
