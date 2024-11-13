@@ -12,8 +12,19 @@ impl FlightLoopCallback for FlightLoopHandler {
     fn flight_loop(&mut self, state: &mut xplm::flight_loop::LoopState) {
         // In our flight loop callback, our datarefs should be ready, and we can read the loadout
         // from file and restore it into the sim.
-        if let Err(error) = LoadoutFile::restore_loadout() {
+        let loadout = match LoadoutFile::with_acf_livery_path() {
+            Ok(loadout) => loadout,
+            Err(error) => {
+                debugln!("{NAME} something went wrong: {error}");
+                state.deactivate();
+                return;
+            }
+        };
+
+        if let Err(error) = loadout.restore_loadout() {
             debugln!("{NAME} something went wrong: {error}");
+            state.deactivate();
+            return;
         }
 
         // We are done. We don't need to run our flight loop callback anymore...

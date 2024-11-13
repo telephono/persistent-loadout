@@ -1,8 +1,9 @@
 // Copyright (c) 2024 telephono
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
-use std::ffi::{c_char, c_int, CStr, OsString};
-use std::fmt::Display;
+use std::cell::RefCell;
+use std::ffi::{CStr, OsString};
+use std::os::raw::{c_char, c_int, c_void};
 use std::path::PathBuf;
 
 use thiserror::Error;
@@ -23,6 +24,10 @@ static DESCRIPTION: &str = "Persistent Loadout for Shenshee's B720";
 pub static XPLANE_OUTPUT_PATH: &str = "Output";
 pub static PLUGIN_OUTPUT_PATH: &str = "B720";
 pub static LOADOUT_FILENAME: &str = "persistent-loadout.json";
+
+thread_local! {
+    pub static GLOBAL_LIVERY: RefCell<PathBuf> = RefCell::new(PathBuf::new());
+}
 
 #[derive(Error, Debug)]
 pub enum PluginError {
@@ -90,8 +95,19 @@ impl Plugin for PersistentLoadoutPlugin {
     fn disable(&mut self) {
         // When the plugin gets disabled (aka the sim shuts down or the user selects another
         // aircraft) we save the current loadout...
-        if let Err(error) = LoadoutFile::save_loadout() {
-            debugln!("something went wrong: {error}");
+        let loadout = match LoadoutFile::with_acf_livery_path() {
+            Ok(loadout) => loadout,
+            Err(error) => {
+                debugln!("{NAME} something went wrong: {error}");
+                self.handler.deactivate();
+                return;
+            }
+        };
+
+        if let Err(error) = loadout.save_loadout() {
+            debugln!("{NAME} something went wrong: {error}");
+            self.handler.deactivate();
+            return;
         }
 
         debugln!("{NAME} disabling");
@@ -103,6 +119,71 @@ impl Plugin for PersistentLoadoutPlugin {
             name: String::from(NAME),
             signature: String::from(SIGNATURE),
             description: String::from(DESCRIPTION),
+        }
+    }
+
+    fn receive_message(&mut self, _from: i32, message: u32, param: *mut c_void) {
+        if message == xplm_sys::XPLM_MSG_LIVERY_LOADED {
+            // We are only interested in our own aircraft (index = 0)
+            let index = param as i32;
+            if index != 0 {
+                return;
+            }
+
+            GLOBAL_LIVERY.with(|path| {
+                let old_livery_path = (*path.borrow()).clone();
+
+                // Ignore on first run...
+                if old_livery_path.as_os_str().is_empty() {
+                    return;
+                }
+
+                // Get new livery path
+                let new_livery_path = match LoadoutFile::acf_livery_path() {
+                    Ok(path) => path,
+                    Err(error) => {
+                        debugln!("{NAME} something went wrong: {error}");
+                        return;
+                    }
+                };
+
+                // Compare old and new livery path
+                // Nothing to do if they are the same...
+                if old_livery_path.as_os_str() == new_livery_path.as_os_str() {
+                    return;
+                }
+
+                // Save loadout for old livery...
+                let old_loadout = match LoadoutFile::with_livery_path(old_livery_path.as_os_str()) {
+                    Ok(loadout) => loadout,
+                    Err(error) => {
+                        debugln!("{NAME} something went wrong: {error}");
+                        return;
+                    }
+                };
+
+                if let Err(error) = old_loadout.save_loadout() {
+                    debugln!("{NAME} something went wrong: {error}");
+                    return;
+                }
+
+                // Restore loadout for new livery...
+                let new_loadout = match LoadoutFile::with_livery_path(new_livery_path.as_os_str()) {
+                    Ok(loadout) => loadout,
+                    Err(error) => {
+                        debugln!("{NAME} something went wrong: {error}");
+                        return;
+                    }
+                };
+
+                if let Err(error) = new_loadout.restore_loadout() {
+                    debugln!("{NAME} something went wrong: {error}");
+                    return;
+                };
+
+                // Update "old" livery
+                *path.borrow_mut() = new_livery_path;
+            });
         }
     }
 }
@@ -169,12 +250,5 @@ impl AircraftModel {
         out_path.pop();
 
         out_path
-    }
-}
-
-impl Display for AircraftModel {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let out_path_file = self.out_path.join(self.out_file.as_path());
-        write!(f, "{}", out_path_file.to_string_lossy())
     }
 }

@@ -1,6 +1,7 @@
 // Copyright (c) 2024 telephono
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
+use std::ffi::OsStr;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::PathBuf;
@@ -10,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use xplm::data::borrowed::DataRef;
 use xplm::data::{ArrayRead, ArrayReadWrite, ReadWrite, StringRead};
 
-use crate::plugin::{AircraftModel, PluginError};
+use crate::plugin::{AircraftModel, PluginError, GLOBAL_LIVERY};
 use crate::plugin::{LOADOUT_FILENAME, NAME, PLUGIN_OUTPUT_PATH, XPLANE_OUTPUT_PATH};
 
 // Light switch indices for different equipment configururations
@@ -19,7 +20,7 @@ const AUTOBRAKE: usize = 50;
 const HF_ANTENNA: usize = 56;
 const NAVIGATION: usize = 84;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct Loadout {
     m_fuel: Vec<f32>,
     #[serde(default)]
@@ -32,27 +33,58 @@ struct Loadout {
     navigation: f32,
 }
 
+#[derive(Debug)]
 pub struct LoadoutFile {
     file: Option<PathBuf>,
     loadout: Option<Loadout>,
 }
 
 impl LoadoutFile {
+    /// Set output file path from aircraft livery path
+    pub fn with_acf_livery_path() -> Result<Self, PluginError> {
+        let mut output_file_path = match Self::acf_livery_path() {
+            Ok(path) => path,
+            Err(error) => return Err(error),
+        };
+
+        // Update "old" livery
+        GLOBAL_LIVERY.with(|path| *path.borrow_mut() = output_file_path.clone());
+
+        output_file_path.push(LOADOUT_FILENAME);
+
+        Ok(Self {
+            file: Some(output_file_path),
+            loadout: None,
+        })
+    }
+
+    /// Set output file path from given livery path
+    pub fn with_livery_path(livery_path: &OsStr) -> Result<Self, PluginError> {
+        let mut output_file_path = PathBuf::from(livery_path);
+        output_file_path.push(LOADOUT_FILENAME);
+
+        Ok(Self {
+            file: Some(output_file_path),
+            loadout: None,
+        })
+    }
+
     /// Read loadout from sim and write it into a JSON file.
-    pub fn save_loadout() -> Result<(), PluginError> {
-        Self::initialize()?.loadout_from_sim()?.write_into_file()?;
+    pub fn save_loadout(self) -> Result<(), PluginError> {
+        self.loadout_from_sim()?.write_into_file()?;
 
         Ok(())
     }
 
     /// Read loadout from JSON file and write it into sim.
-    pub fn restore_loadout() -> Result<(), PluginError> {
-        Self::initialize()?.loadout_from_file()?.write_into_sim()?;
+    pub fn restore_loadout(self) -> Result<(), PluginError> {
+        self.loadout_from_file()?.write_into_sim()?;
 
         Ok(())
     }
 
-    fn initialize() -> Result<Self, PluginError> {
+    /// Build output path from `sim/aircraft/view/acf_livery_path` dataref
+    pub fn acf_livery_path() -> Result<PathBuf, PluginError> {
         let acf_livery_path: DataRef<[u8]> = DataRef::find("sim/aircraft/view/acf_livery_path")?;
         let acf_livery_path = acf_livery_path.get_as_string()?;
 
@@ -90,13 +122,7 @@ impl LoadoutFile {
                 return Err(PluginError::MissingPath);
             };
         }
-
-        output_file_path.push(LOADOUT_FILENAME);
-
-        Ok(Self {
-            file: Some(output_file_path),
-            loadout: None,
-        })
+        Ok(output_file_path)
     }
 
     /// Read the loadout from a JSON file, but only if `self.file` is set.
