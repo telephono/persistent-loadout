@@ -12,5 +12,5 @@ crate-type = ["cdylib"]
 serde = { version = "1.0.215", features = ["derive"] }
 serde_json = "1.0.132"
 thiserror = "2.0.3"
-xplm = { version = "0.4.1", git = "https://github.com/telephono/rust-xplm.git", branch = "xplugin-receive-message+update-sdk-411" }
-xplm-sys = { version = "0.5.0", git = "https://github.com/telephono/xplm-sys.git", branch = "update-sdk-411" }
+xplm = { git = "https://github.com/telephono/rust-xplm.git", branch = "xplugin-receive-message+update-sdk-411" }
+xplm-sys = { git = "https://github.com/telephono/xplm-sys.git", branch = "update-sdk-411" }
