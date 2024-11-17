@@ -11,8 +11,10 @@ use serde::{Deserialize, Serialize};
 use xplm::data::borrowed::DataRef;
 use xplm::data::{ArrayRead, ArrayReadWrite, ReadWrite, StringRead};
 
-use crate::plugin::{AircraftModel, PluginError, GLOBAL_LIVERY};
-use crate::plugin::{LOADOUT_FILENAME, NAME, PLUGIN_OUTPUT_PATH, XPLANE_OUTPUT_PATH};
+use crate::plugin::{AircraftModel, PluginError};
+use crate::plugin::{
+    GLOBAL_LIVERY, LOADOUT_FILENAME, NAME, PLUGIN_OUTPUT_PATH, XPLANE_OUTPUT_PATH,
+};
 
 // Light switch indices for different equipment configururations
 const AUTOTHROTTLE: usize = 49;
@@ -93,15 +95,15 @@ impl LoadoutFile {
 
         // Build path from aircraft model
         let aircraft_model = AircraftModel::new(0)?;
-        match aircraft_model.out_file_stem().to_string_lossy().as_ref() {
-            "Boeing_720" => output_file_path.push("720"),
-            "Boeing_720B" => output_file_path.push("720B"),
+        match aircraft_model.out_file.to_string_lossy().as_ref() {
+            "Boeing_720.acf" => output_file_path.push("720"),
+            "Boeing_720B.acf" => output_file_path.push("720B"),
             _ => {
                 debugln!(
                     "{NAME} failed to get known aircraft model from {:?}",
                     aircraft_model
                 );
-                let aircraft = aircraft_model.out_file_stem().to_string_lossy().to_string();
+                let aircraft = aircraft_model.out_file.to_string_lossy().to_string();
                 return Err(PluginError::AircraftNotSupported(aircraft));
             }
         }

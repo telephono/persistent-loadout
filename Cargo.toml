@@ -13,4 +13,4 @@ serde = { version = "1.0.215", features = ["derive"] }
 serde_json = "1.0.132"
 thiserror = "2.0.3"
 xplm = { git = "https://github.com/telephono/rust-xplm.git", branch = "xplugin-receive-message+update-sdk-411" }
-xplm-sys = { git = "https://github.com/telephono/xplm-sys.git", branch = "update-sdk-411" }
+xplm-sys = "0.5.1"

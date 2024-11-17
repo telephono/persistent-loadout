@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 use std::cell::RefCell;
-use std::ffi::{CStr, OsString};
+use std::ffi::CStr;
 use std::os::raw::{c_char, c_int, c_void};
 use std::path::PathBuf;
 
@@ -11,6 +11,7 @@ use thiserror::Error;
 use xplm::data::borrowed::DataRef;
 use xplm::data::{DataRead, StringRead};
 use xplm::flight_loop::FlightLoop;
+use xplm::plugin::messages::XPLM_MSG_LIVERY_LOADED;
 use xplm::plugin::{Plugin, PluginInfo};
 
 use crate::flight_loop::FlightLoopHandler;
@@ -122,8 +123,8 @@ impl Plugin for PersistentLoadoutPlugin {
         }
     }
 
-    fn receive_message(&mut self, _from: i32, message: u32, param: *mut c_void) {
-        if message == xplm_sys::XPLM_MSG_LIVERY_LOADED {
+    fn receive_message(&mut self, _from: i32, message: i32, param: *mut c_void) {
+        if message == XPLM_MSG_LIVERY_LOADED {
             // We are only interested in our own aircraft (index = 0)
             let index = param as i32;
             if index != 0 {
@@ -188,11 +189,12 @@ impl Plugin for PersistentLoadoutPlugin {
     }
 }
 
+#[allow(dead_code)]
 /// XPLMGetNthAircraftModel wrapper
 #[derive(Debug)]
 pub struct AircraftModel {
-    out_file: PathBuf,
-    out_path: PathBuf,
+    pub out_file: PathBuf,
+    pub out_path: PathBuf,
 }
 
 impl AircraftModel {
@@ -217,38 +219,5 @@ impl AircraftModel {
         let out_path = PathBuf::from(out_path.to_str()?);
 
         Ok(Self { out_file, out_path })
-    }
-
-    #[allow(dead_code)]
-    /// Return aircraft's acf file name without .acf extension
-    pub fn out_file_stem(&self) -> OsString {
-        self.out_file.file_stem().unwrap_or_default().to_owned()
-    }
-
-    #[allow(dead_code)]
-    /// Return path to aircraft's acf file
-    /// The path is relative to the X-Plane root directory
-    pub fn relative_out_path(&self) -> PathBuf {
-        let mut is_relative = false;
-
-        // Iterate through the full path until we get the `Aircraft` folder and then start
-        // returning everything.
-        // This way we should get a path relative to X-Plane's root directory.
-        // Maybe this could be a use case for XPLMGetSystemPath...
-        let mut out_path: PathBuf = self
-            .out_path
-            .iter()
-            .filter(|&segment| {
-                if segment == "Aircraft" {
-                    is_relative = true;
-                }
-                is_relative
-            })
-            .collect();
-
-        // Truncate file name from path
-        out_path.pop();
-
-        out_path
     }
 }
