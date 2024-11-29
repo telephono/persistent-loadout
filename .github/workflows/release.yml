@@ -23,7 +23,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: build-linux
+          name: lin_x64
           path: |
             persistent-loadout
 
@@ -43,7 +43,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: build-mac
+          name: mac_x64
           path: |
             persistent-loadout
 
@@ -61,7 +61,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: build-windows
+          name: win_x64
           path: |
             persistent-loadout
 
@@ -74,7 +74,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: persistent-loadout
-          pattern: build-*
+          pattern: '*_x64'
           merge-multiple: 'true'
 
       - name: Create ZIP archive
