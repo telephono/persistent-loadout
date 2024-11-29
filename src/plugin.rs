@@ -10,6 +10,7 @@ use thiserror::Error;
 
 use xplm::data::borrowed::DataRef;
 use xplm::data::{DataRead, StringRead};
+use xplm::feature::find_feature;
 use xplm::flight_loop::FlightLoop;
 use xplm::plugin::messages::XPLM_MSG_LIVERY_LOADED;
 use xplm::plugin::{Plugin, PluginInfo};
@@ -62,6 +63,11 @@ impl Plugin for PersistentLoadoutPlugin {
 
     fn start() -> Result<Self, Self::Error> {
         debugln!("{NAME} starting up");
+
+        if let Some(feature) = find_feature("XPLM_USE_NATIVE_PATHS") {
+            debugln!("{NAME} enabling XPLM_USE_NATIVE_PATHS feature");
+            feature.set_enabled(true);
+        }
 
         let plugin = Self {
             handler: FlightLoop::new(FlightLoopHandler),
