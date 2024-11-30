@@ -160,6 +160,8 @@ impl Plugin for PersistentLoadoutPlugin {
                     return;
                 }
 
+                debugln!("{NAME} livery change detected");
+
                 // Save loadout for old livery...
                 let old_loadout = match LoadoutFile::with_livery_path(old_livery_path.as_os_str()) {
                     Ok(loadout) => loadout,
