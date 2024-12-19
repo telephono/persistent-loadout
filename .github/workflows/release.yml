@@ -77,6 +77,11 @@ jobs:
           pattern: '*_x64'
           merge-multiple: 'true'
 
+      - name: Copy additional files
+        run: |
+          cp LICENSE persistent-loadout/LICENSE.txt
+          cp README.md persistent-loadout/README.md
+
       - name: Create ZIP archive
         env:
           ref_name: ${{ github.ref_name }}
