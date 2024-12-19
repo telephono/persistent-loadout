@@ -2,8 +2,8 @@ name: Release Workflow
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+#    tags:
+#      - 'v*.*.*'
 
 env:
   CARGO_TERM_COLOR: always
@@ -65,24 +65,39 @@ jobs:
           path: |
             persistent-loadout
 
-  release:
+  build-docs:
     runs-on: ubuntu-latest
-
-    needs: [ build-linux, build-mac, build-windows ]
 
     steps:
       - uses: actions/checkout@v4
-        
+
+      - name: Copy files
+        run: |
+          mkdir -p persistent-loadout
+          cp LICENSE persistent-loadout/LICENSE.txt
+          cp README.md persistent-loadout/README.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docs
+          path: |
+            persistent-loadout
+
+  release:
+    runs-on: ubuntu-latest
+
+    needs: [ build-docs, build-linux, build-mac, build-windows ]
+
+    steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           path: persistent-loadout
-          pattern: '*_x64'
+          pattern: |
+            '*_x64'
+            'docs'
           merge-multiple: 'true'
-
-      - name: Copy additional files
-        run: |
-          cp LICENSE persistent-loadout/LICENSE.txt
-          cp README.md persistent-loadout/README.md
 
       - name: Create ZIP archive
         env:
