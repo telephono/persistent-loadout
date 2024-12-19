@@ -87,9 +87,6 @@ impl LoadoutFile {
 
     /// Build output path from `sim/aircraft/view/acf_livery_path` dataref
     pub fn acf_livery_path() -> Result<PathBuf, PluginError> {
-        let acf_livery_path: DataRef<[u8]> = DataRef::find("sim/aircraft/view/acf_livery_path")?;
-        let acf_livery_path = acf_livery_path.get_as_string()?;
-
         let mut output_file_path = PathBuf::from(XPLANE_OUTPUT_PATH);
         output_file_path.push(PLUGIN_OUTPUT_PATH);
 
@@ -107,6 +104,9 @@ impl LoadoutFile {
                 return Err(PluginError::AircraftNotSupported(aircraft));
             }
         }
+
+        let acf_livery_path: DataRef<[u8]> = DataRef::find("sim/aircraft/view/acf_livery_path")?;
+        let acf_livery_path = acf_livery_path.get_as_string()?;
 
         if acf_livery_path.is_empty() {
             // Set up a valid livery path for default livery.
