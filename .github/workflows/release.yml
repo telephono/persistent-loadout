@@ -92,9 +92,6 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: persistent-loadout
-          pattern: |
-            '*_x64'
-            'docs'
           merge-multiple: 'true'
 
       - name: Create ZIP archive
