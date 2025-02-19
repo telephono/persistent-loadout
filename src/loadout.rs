@@ -84,8 +84,8 @@ impl LoadoutFile {
 
     /// Build output path from `sim/aircraft/view/acf_livery_path` dataref
     pub fn acf_livery_path() -> Result<PathBuf, PluginError> {
-        let mut output_file_path = PathBuf::from(XPLANE_OUTPUT_PATH);
-        output_file_path.push(PLUGIN_OUTPUT_PATH);
+        let mut output_file_path: PathBuf =
+            [XPLANE_OUTPUT_PATH, PLUGIN_OUTPUT_PATH].iter().collect();
 
         // Build path from aircraft model
         let aircraft_model = AircraftModel::new(0)?;
