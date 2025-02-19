@@ -44,10 +44,7 @@ pub struct LoadoutFile {
 impl LoadoutFile {
     /// Set output file path from aircraft livery path
     pub fn with_acf_livery_path() -> Result<Self, PluginError> {
-        let mut output_file_path = match Self::acf_livery_path() {
-            Ok(path) => path,
-            Err(error) => return Err(error),
-        };
+        let mut output_file_path = Self::acf_livery_path()?;
 
         // Update "old" livery
         GLOBAL_LIVERY.with(|path| *path.borrow_mut() = output_file_path.clone());
