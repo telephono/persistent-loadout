@@ -19,7 +19,7 @@ use crate::flight_loop::FlightLoopHandler;
 use crate::loadout::LoadoutFile;
 
 pub static NAME: &str = concat!("Persistent Loadout v", env!("CARGO_PKG_VERSION"));
-static SIGNATURE: &str = concat!("com.x-plane.xplm.", env!("CARGO_PKG_NAME"));
+static SIGNATURE: &str = concat!("io.github.telephono.", env!("CARGO_PKG_NAME"));
 static DESCRIPTION: &str = "Persistent Loadout for Shenshee's B720";
 
 // Build output path from these components
