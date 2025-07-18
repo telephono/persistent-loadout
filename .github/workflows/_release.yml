@@ -1,0 +1,29 @@
+name: release.yml
+
+on:
+  workflow_call:
+    inputs:
+      output-path:
+        description: The package name as defined in Cargo.toml. Replace any dashes with underscores.
+        required: true
+        type: string
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ inputs.output-path }}
+          merge-multiple: 'true'
+      - run: |
+          cp LICENSE ${{ inputs.output-path }}/LICENSE.txt
+          cp README.md ${{ inputs.output-path }}/README.md
+      - run: |
+          zip -r ${{ inputs.output-path }}-${{ github.ref_name }}.zip ${{ inputs.output-path }}/
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          draft: true
+          files: ${{ inputs.output-path }}-*.zip
