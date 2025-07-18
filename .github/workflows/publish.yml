@@ -1,0 +1,21 @@
+name: publish.yml
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    uses: ./.github/workflows/_build.yml
+    with:
+      output-path: persistent_loadout
+
+  release:
+    needs: build
+    uses: ./.github/workflows/_release.yml
+    with:
+      output-path: persistent_loadout
