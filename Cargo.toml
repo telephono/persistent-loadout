@@ -11,6 +11,6 @@ crate-type = ["cdylib"]
 [dependencies]
 serde = { version = "1.0.218", features = ["derive"] }
 serde_json = "1.0.139"
-thiserror = "1.0.69"
+thiserror = "2.0.12"
 xplm = "0.4.2"
 xplm-sys = "0.5.1"
