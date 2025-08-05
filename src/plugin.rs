@@ -1,10 +1,10 @@
 // Copyright (c) 2024 telephono
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
-use std::cell::RefCell;
 use std::ffi::CStr;
 use std::os::raw::{c_char, c_int, c_void};
 use std::path::PathBuf;
+use std::sync::Mutex;
 
 use thiserror::Error;
 
@@ -27,9 +27,7 @@ pub static XPLANE_OUTPUT_PATH: &str = "Output";
 pub static PLUGIN_OUTPUT_PATH: &str = "B720";
 pub static LOADOUT_FILENAME: &str = "persistent-loadout.json";
 
-thread_local! {
-    pub static GLOBAL_LIVERY: RefCell<PathBuf> = RefCell::new(PathBuf::new());
-}
+pub static LIVERY: Mutex<Option<PathBuf>> = Mutex::new(None);
 
 #[derive(Error, Debug)]
 pub enum PluginError {
@@ -137,17 +135,17 @@ impl Plugin for PersistentLoadoutPlugin {
                 return;
             }
 
-            GLOBAL_LIVERY.with(|path| {
-                let old_livery_path = (*path.borrow()).clone();
+            if let Ok(mut mutex) = LIVERY.lock() {
+                let old_livery_path = mutex.as_ref().cloned();
 
                 // Ignore on first run...
-                if old_livery_path.as_os_str().is_empty() {
+                if old_livery_path.is_none() {
                     return;
                 }
 
                 // Get new livery path
                 let new_livery_path = match LoadoutFile::acf_livery_path() {
-                    Ok(path) => path,
+                    Ok(path) => Some(path),
                     Err(error) => {
                         debugln!("{NAME} something went wrong: {error}");
                         return;
@@ -156,14 +154,16 @@ impl Plugin for PersistentLoadoutPlugin {
 
                 // Compare old and new livery path
                 // Nothing to do if they are the same...
-                if old_livery_path.as_os_str() == new_livery_path.as_os_str() {
+                if old_livery_path == new_livery_path {
                     return;
                 }
 
                 debugln!("{NAME} livery change detected");
 
                 // Save loadout for old livery...
-                let old_loadout = match LoadoutFile::with_livery_path(old_livery_path.as_os_str()) {
+                let old_loadout = match LoadoutFile::with_livery_path(
+                    old_livery_path.as_ref().unwrap().as_os_str(),
+                ) {
                     Ok(loadout) => loadout,
                     Err(error) => {
                         debugln!("{NAME} something went wrong: {error}");
@@ -177,7 +177,9 @@ impl Plugin for PersistentLoadoutPlugin {
                 }
 
                 // Restore loadout for new livery...
-                let new_loadout = match LoadoutFile::with_livery_path(new_livery_path.as_os_str()) {
+                let new_loadout = match LoadoutFile::with_livery_path(
+                    new_livery_path.as_ref().unwrap().as_os_str(),
+                ) {
                     Ok(loadout) => loadout,
                     Err(error) => {
                         debugln!("{NAME} something went wrong: {error}");
@@ -191,8 +193,8 @@ impl Plugin for PersistentLoadoutPlugin {
                 };
 
                 // Update "old" livery
-                *path.borrow_mut() = new_livery_path;
-            });
+                *mutex = new_livery_path;
+            };
         }
     }
 }
