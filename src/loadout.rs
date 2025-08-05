@@ -12,9 +12,7 @@ use xplm::data::borrowed::DataRef;
 use xplm::data::{ArrayRead, ArrayReadWrite, ReadWrite, StringRead};
 
 use crate::plugin::{AircraftModel, PluginError};
-use crate::plugin::{
-    GLOBAL_LIVERY, LOADOUT_FILENAME, NAME, PLUGIN_OUTPUT_PATH, XPLANE_OUTPUT_PATH,
-};
+use crate::plugin::{LIVERY, LOADOUT_FILENAME, NAME, PLUGIN_OUTPUT_PATH, XPLANE_OUTPUT_PATH};
 
 // Light switch indices for different equipment configururations
 const AUTOTHROTTLE: usize = 49;
@@ -47,7 +45,9 @@ impl LoadoutFile {
         let mut output_file_path = Self::acf_livery_path()?;
 
         // Update "old" livery
-        GLOBAL_LIVERY.with(|path| *path.borrow_mut() = output_file_path.clone());
+        if let Ok(mut mutex) = LIVERY.lock() {
+            *mutex = Some(output_file_path.clone());
+        }
 
         output_file_path.push(LOADOUT_FILENAME);
 
@@ -111,7 +111,7 @@ impl LoadoutFile {
         } else {
             // Set up a valid livery path.
             let acf_livery_path = PathBuf::from(acf_livery_path.as_str());
-            if let Some(livery_path) = acf_livery_path.components().last() {
+            if let Some(livery_path) = acf_livery_path.components().next_back() {
                 output_file_path.push(livery_path)
             } else {
                 debugln!(
